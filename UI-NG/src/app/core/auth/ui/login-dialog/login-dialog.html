@@ -1,0 +1,72 @@
+<p-dialog
+  header="Login"
+  [visible]="ui.openDialog() === 'login'"
+  (visibleChange)="visibleChange($event)"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: '26rem' }"
+  [breakpoints]="{ '640px': '95vw' }"
+>
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (error(); as message) {
+      <p-message severity="error">{{ message }}</p-message>
+    }
+
+    <div class="auth-field">
+      <label for="login-email">Email</label>
+      <input
+        pInputText
+        id="login-email"
+        type="email"
+        formControlName="email"
+        autocomplete="username"
+        placeholder="you@example.com"
+        [fluid]="true"
+      />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <small class="auth-field__error">Enter a valid email address.</small>
+      }
+    </div>
+
+    <div class="auth-field">
+      <label for="login-password">Password</label>
+      <p-password
+        inputId="login-password"
+        formControlName="password"
+        [feedback]="false"
+        [toggleMask]="true"
+        autocomplete="current-password"
+        placeholder="Enter your password"
+        inputStyleClass="auth-password-input"
+      />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <small class="auth-field__error">Password is required.</small>
+      }
+    </div>
+
+    <div class="auth-actions">
+      <p-button
+        type="button"
+        label="Guest Login"
+        icon="pi pi-user"
+        [text]="true"
+        [loading]="ui.guestLoading()"
+        [disabled]="loading()"
+        (onClick)="ui.loginAsGuest()"
+      />
+      <p-button
+        type="submit"
+        label="Sign in"
+        icon="pi pi-sign-in"
+        [loading]="loading()"
+        [disabled]="ui.guestLoading()"
+      />
+    </div>
+
+    <p class="auth-switch">
+      Need an account?
+      <button type="button" class="auth-link" (click)="ui.openRegister()">Register</button>
+    </p>
+  </form>
+</p-dialog>

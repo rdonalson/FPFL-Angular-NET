@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { appTestProviders } from '../../../testing/test-providers';
 import { GALLERY_IMAGES } from './gallery-images';
 import { Home } from './home';
 
@@ -7,8 +8,10 @@ describe('Home', () => {
   let fixture: ComponentFixture<Home>;
 
   beforeEach(async () => {
+    sessionStorage.clear();
     await TestBed.configureTestingModule({
       imports: [Home],
+      providers: appTestProviders(),
     }).compileComponents();
 
     fixture = TestBed.createComponent(Home);
@@ -25,6 +28,10 @@ describe('Home', () => {
     expect(el.querySelector<HTMLAnchorElement>('.home__guide')?.getAttribute('href')).toBe(
       'media/financial-planner-guide.pdf',
     );
+  });
+
+  it('offers guest login when signed out', () => {
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Guest Login');
   });
 });
 

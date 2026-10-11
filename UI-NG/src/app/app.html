@@ -1,7 +1,28 @@
+<div class="app-progress" aria-hidden="true">
+  @if (loading.active()) {
+    <p-progressbar mode="indeterminate" />
+  }
+</div>
+
 <app-topbar />
 
 <main class="app-main">
+  @if (auth.endedReason() === 'expired') {
+    <div class="app-notice">
+      <p-message severity="warn">
+        Your session expired.
+        <button type="button" class="app-notice__link" (click)="loginAgain()">Log in again</button>
+      </p-message>
+    </div>
+  }
+
   <router-outlet />
 </main>
 
 <app-footer />
+
+<p-toast position="top-right" />
+<app-login-dialog />
+<app-register-dialog />
+<app-change-password-dialog />
+<app-session-expiring-dialog />

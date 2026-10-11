@@ -4,8 +4,63 @@
     <span class="topbar__title">{{ title }}</span>
   </a>
 
-  <a class="topbar__repo" [href]="repoUrl" target="_blank" rel="noopener">
-    <i class="pi pi-github" aria-hidden="true"></i>
-    <span class="topbar__repo-text">View the code on GitHub</span>
-  </a>
+  <nav class="topbar__actions" aria-label="Account">
+    @if (auth.isAuthenticated()) {
+      <span class="topbar__user" [title]="auth.session()?.email ?? ''">
+        <i class="pi pi-user" aria-hidden="true"></i>
+        <span class="topbar__label">{{ auth.displayName() }}</span>
+      </span>
+
+      @if (!auth.isGuest()) {
+        <p-button
+          icon="pi pi-key"
+          label="Change Password"
+          [text]="true"
+          styleClass="topbar__btn"
+          ariaLabel="Change Password"
+          (onClick)="ui.openChangePassword()"
+        />
+      }
+
+      <p-button
+        icon="pi pi-sign-out"
+        label="Logout"
+        [text]="true"
+        styleClass="topbar__btn"
+        ariaLabel="Logout"
+        (onClick)="ui.logout()"
+      />
+    } @else {
+      <p-button
+        icon="pi pi-user"
+        label="Guest Login"
+        [text]="true"
+        [loading]="ui.guestLoading()"
+        styleClass="topbar__btn"
+        ariaLabel="Guest Login"
+        (onClick)="ui.loginAsGuest()"
+      />
+      <p-button
+        icon="pi pi-sign-in"
+        label="Login"
+        [text]="true"
+        styleClass="topbar__btn"
+        ariaLabel="Login"
+        (onClick)="ui.openLogin()"
+      />
+      <p-button
+        icon="pi pi-user-plus"
+        label="Register"
+        [text]="true"
+        styleClass="topbar__btn"
+        ariaLabel="Register"
+        (onClick)="ui.openRegister()"
+      />
+    }
+
+    <a class="topbar__repo" [href]="repoUrl" target="_blank" rel="noopener" title="View the code on GitHub">
+      <i class="pi pi-github" aria-hidden="true"></i>
+      <span class="visually-hidden">View the code on GitHub</span>
+    </a>
+  </nav>
 </header>

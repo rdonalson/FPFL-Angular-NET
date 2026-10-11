@@ -4,6 +4,16 @@
   min-height: 100dvh;
 }
 
+// Reserve the bar's height so the page doesn't shift when it appears.
+.app-progress {
+  height: 3px;
+
+  ::ng-deep .p-progressbar {
+    height: 3px;
+    border-radius: 0;
+  }
+}
+
 .app-main {
   flex: 1;
   width: 100%;
@@ -13,9 +23,29 @@
   box-sizing: border-box;
 }
 
+.app-notice {
+  margin-bottom: 1rem;
+}
+
+.app-notice__link {
+  border: 0;
+  padding: 0;
+  margin-left: 0.25rem;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 // Phones: use the full window width.
 @media (max-width: 640px) {
   .app-main {
     padding: 0.75rem 0;
+  }
+
+  .app-notice {
+    padding: 0 0.75rem;
   }
 }

@@ -74,3 +74,36 @@
     box-shadow: none;
   }
 }
+
+.home__start {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--fpfl-border);
+}
+
+.home__start-text {
+  margin: 0 0 0.75rem;
+  color: var(--fpfl-muted);
+}
+
+.home__start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.home__start-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  background: var(--fpfl-link);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+}

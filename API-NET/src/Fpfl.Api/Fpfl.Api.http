@@ -19,3 +19,55 @@ Accept: application/json
 ### Health
 GET {{Fpfl.Api_HostAddress}}/health
 Accept: application/json
+
+# ---------------------------------------------------------------------------
+# Auth: run "Guest login" first, then copy accessToken / refreshToken below.
+# ---------------------------------------------------------------------------
+@accessToken = paste-access-token-here
+@refreshToken = paste-refresh-token-here
+
+### Guest login (no password sent)
+POST {{Fpfl.Api_HostAddress}}/auth/guest
+Accept: application/json
+
+### Login
+POST {{Fpfl.Api_HostAddress}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "guest.user@gmail.com",
+  "password": "wrong-password"
+}
+
+### Who am I (needs accessToken)
+GET {{Fpfl.Api_HostAddress}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### Who am I without a token -> 401 ApiResponse
+GET {{Fpfl.Api_HostAddress}}/auth/me
+
+### Refresh (each refresh token works once)
+POST {{Fpfl.Api_HostAddress}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout (revokes the refresh token)
+POST {{Fpfl.Api_HostAddress}}/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Change password as guest -> 403 ApiResponse
+POST {{Fpfl.Api_HostAddress}}/auth/change-password
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "anything",
+  "newPassword": "something-new"
+}

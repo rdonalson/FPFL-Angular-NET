@@ -35,5 +35,28 @@
       <i class="pi pi-file-pdf" aria-hidden="true"></i>
       Financial Planner Guide
     </a>
+
+    <div class="home__start">
+      @if (auth.isAuthenticated()) {
+        <p class="home__start-text">Signed in as {{ auth.displayName() }}.</p>
+        <div class="home__start-actions">
+          <a routerLink="/item-types" class="home__start-link">
+            <i class="pi pi-tags" aria-hidden="true"></i>
+            Item Types
+          </a>
+        </div>
+      } @else {
+        <p class="home__start-text">Try it with the guest account, or sign in with your own.</p>
+        <div class="home__start-actions">
+          <p-button
+            label="Guest Login"
+            icon="pi pi-user"
+            [loading]="ui.guestLoading()"
+            (onClick)="ui.loginAsGuest()"
+          />
+          <p-button label="Login" icon="pi pi-sign-in" [outlined]="true" (onClick)="ui.openLogin()" />
+        </div>
+      }
+    </div>
   </aside>
 </section>

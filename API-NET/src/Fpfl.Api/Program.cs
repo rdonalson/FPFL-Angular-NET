@@ -2,9 +2,12 @@ using Fpfl.Api.Exceptions;
 using Fpfl.Api.Health;
 using Fpfl.Api.Mappers;
 using Fpfl.Api.Responses;
+using Fpfl.Api.Security;
+using Fpfl.Auth;
 using Fpfl.Common;
 using Fpfl.Items;
 using Fpfl.Items.Infrastructure.Health;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,9 +16,9 @@ var builder = WebApplication.CreateBuilder(args);
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-// Connection string lives in user-secrets (dev) or an environment variable (prod):
+// Secrets live in user-secrets (dev) or environment variables (prod), never in appsettings.json:
 //   dotnet user-secrets set "ConnectionStrings:Fpfl" "Host=localhost;Port=5432;Database=FPFL-V2;Username=postgres;Password=..." --project src/Fpfl.Api
-//   ConnectionStrings__Fpfl=...
+//   dotnet user-secrets set "Auth:SigningKey" "<at least 32 random characters>" --project src/Fpfl.Api
 var connectionString = builder.Configuration.GetConnectionString("Fpfl")
     ?? throw new InvalidOperationException(
         "Connection string 'ConnectionStrings:Fpfl' is not configured. " +
@@ -28,16 +31,23 @@ var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get
 // ---------------------------------------------------------------------------
 builder.Services.AddFpflCommon();
 builder.Services.AddFpflItems(connectionString);
+builder.Services.AddFpflAuth(builder.Configuration, connectionString);
+
+// 401/403 from JWT bearer auth use the standard ApiResponse envelope.
+builder.Services.PostConfigure<JwtBearerOptions>(
+    JwtBearerDefaults.AuthenticationScheme,
+    options => options.Events = AuthEnvelopeEvents.Create());
 
 // ---------------------------------------------------------------------------
 // API layer
 // ---------------------------------------------------------------------------
 builder.Services.AddSingleton<IApiResponseFactory, ApiResponseFactory>();
 builder.Services.AddSingleton<ItemTypeMapper>();
+builder.Services.AddSingleton<AuthMapper>();
 
 builder.Services.AddControllers();
 
-// Model-binding errors (bad JSON, wrong types) use the same envelope as every other error.
+// Model-binding errors (bad JSON, wrong types, failed [Required] etc.) use the same envelope.
 builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.InvalidModelStateResponseFactory = context =>
     {
@@ -77,13 +87,21 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
 var app = builder.Build();
 
 app.UseExceptionHandler();
-app.UseHttpsRedirection();
+
+// HTTPS redirection only outside Development: browsers refuse to follow a redirect on a CORS
+// preflight, so redirecting UI-NG's http://localhost:5132 calls would break login.
+// In production TLS is terminated by the ingress anyway.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // Landing page: wwwroot/index.html at "/"
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseCors();
+app.UseAuthentication();
 app.UseAuthorization();
 
 // OpenAPI document + Swagger UI (linked from the landing page)

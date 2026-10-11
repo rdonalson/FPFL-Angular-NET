@@ -1,0 +1,61 @@
+<section class="page">
+  <header class="page__header">
+    <div>
+      <a class="page__back" routerLink="/">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Home
+      </a>
+      <h1 class="page__title">Item Types</h1>
+      <p class="page__subtitle">The kinds of entries a ledger item can be.</p>
+    </div>
+
+    <p-button
+      icon="pi pi-refresh"
+      label="Refresh"
+      [outlined]="true"
+      [loading]="itemTypes.isLoading()"
+      (onClick)="itemTypes.reload()"
+    />
+  </header>
+
+  @if (error(); as err) {
+    <p-message severity="error" class="page__error">
+      {{ err.message }}
+      @if (err.correlationId) {
+        <span class="page__correlation">Reference: {{ err.correlationId }}</span>
+      }
+    </p-message>
+  }
+
+  <div class="page__card">
+    <p-table
+      [value]="rows()"
+      [loading]="itemTypes.isLoading()"
+      dataKey="id"
+      [stripedRows]="true"
+      [tableStyle]="{ 'min-width': '18rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th class="col-id">ID</th>
+          <th>Name</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-row>
+        <tr>
+          <td class="col-id">{{ row.id }}</td>
+          <td>{{ row.name }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="2" class="page__empty">
+            {{ itemTypes.isLoading() ? 'Loading…' : 'No item types found.' }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</section>

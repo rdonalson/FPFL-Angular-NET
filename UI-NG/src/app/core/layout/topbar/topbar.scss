@@ -3,18 +3,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1.25rem;
   background: var(--fpfl-header-bg);
   color: var(--fpfl-header-fg);
 }
 
 .topbar__brand,
-.topbar__repo {
+.topbar__repo,
+.topbar__user {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
   color: inherit;
   text-decoration: none;
+  min-width: 0;
 }
 
 .topbar__avatar {
@@ -29,8 +31,21 @@
   letter-spacing: 0.01em;
 }
 
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.topbar__user {
+  gap: 0.4rem;
+  margin-right: 0.5rem;
+  font-weight: 500;
+}
+
 .topbar__repo {
-  font-size: 0.9rem;
+  margin-left: 0.5rem;
   opacity: 0.85;
   transition: opacity 0.15s ease;
 
@@ -43,17 +58,49 @@
   }
 }
 
-// Phones: keep the GitHub icon, drop its label.
-@media (max-width: 640px) {
-  .topbar {
-    padding: 0.6rem 0.75rem;
-  }
+// Text buttons are light-on-dark in the header.
+:host ::ng-deep .topbar__btn.p-button {
+  color: var(--fpfl-header-fg);
 
+  &:not(:disabled):hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--fpfl-header-fg);
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+// Tablets: shorten the title.
+@media (max-width: 900px) {
   .topbar__title {
     font-size: 1rem;
   }
+}
 
-  .topbar__repo-text {
+// Phones: icons only, title hidden behind the avatar.
+@media (max-width: 640px) {
+  .topbar {
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .topbar__title,
+  .topbar__label {
     display: none;
+  }
+
+  :host ::ng-deep .topbar__btn .p-button-label {
+    display: none;
+  }
+
+  .topbar__user {
+    margin-right: 0;
   }
 }

@@ -1,0 +1,77 @@
+.page__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--fpfl-link);
+  text-decoration: none;
+  font-size: 0.9rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.page__title {
+  margin: 0.4rem 0 0.25rem;
+  font-size: 1.6rem;
+}
+
+.page__subtitle {
+  margin: 0;
+  color: var(--fpfl-muted);
+}
+
+.page__error {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.page__correlation {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.page__card {
+  background: var(--fpfl-surface);
+  border-radius: 12px;
+  box-shadow: var(--fpfl-shadow);
+  overflow: hidden;
+}
+
+.col-id {
+  width: 6rem;
+}
+
+.page__empty {
+  text-align: center;
+  color: var(--fpfl-muted);
+  padding: 1.5rem;
+}
+
+// Phones: full window width, header stacks.
+@media (max-width: 640px) {
+  .page__header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0 0.75rem;
+  }
+
+  .page__error {
+    margin: 0 0.75rem 1rem;
+  }
+
+  .page__card {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

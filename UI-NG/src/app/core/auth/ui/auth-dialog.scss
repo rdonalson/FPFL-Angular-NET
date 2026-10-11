@@ -1,0 +1,67 @@
+// Shared by the login, register and change-password dialogs.
+
+.auth-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-field {
+  display: grid;
+  gap: 0.35rem;
+
+  label {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+}
+
+.auth-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.auth-field__error {
+  color: var(--p-red-600, #dc2626);
+}
+
+// p-password renders its own wrapper; make it and its input full width.
+:host ::ng-deep {
+  p-password,
+  .p-password,
+  .auth-password-input {
+    width: 100%;
+  }
+}
+
+.auth-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.auth-switch {
+  margin: 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--fpfl-muted);
+}
+
+.auth-link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--fpfl-link);
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
