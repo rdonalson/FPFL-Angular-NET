@@ -1,1 +1,32 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global styles. PrimeNG's Aura theme is injected at runtime by providePrimeNG (app.config.ts);
+   PrimeIcons comes from angular.json "styles". */
+
+:root {
+  --fpfl-bg: #f5f7fa;
+  --fpfl-surface: #ffffff;
+  --fpfl-text: #1f2937;
+  --fpfl-muted: #4b5563;
+  --fpfl-border: #e5e7eb;
+  --fpfl-link: #2563eb;
+  --fpfl-header-bg: #1e293b;
+  --fpfl-header-fg: #ffffff;
+  --fpfl-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--fpfl-bg);
+  color: var(--fpfl-text);
+  -webkit-font-smoothing: antialiased;
+}

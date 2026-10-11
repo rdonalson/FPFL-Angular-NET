@@ -1,0 +1,76 @@
+.home {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.home__gallery {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--fpfl-shadow);
+  background: #000;
+}
+
+// Photos are a mix of 4:3 and 3:2; a fixed frame stops the layout jumping between slides.
+.home__slide {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.home__info {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--fpfl-surface);
+  box-shadow: var(--fpfl-shadow);
+}
+
+.home__heading {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.home__points {
+  margin: 0 0 1.25rem;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.75rem;
+  color: var(--fpfl-muted);
+  line-height: 1.5;
+}
+
+.home__guide {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--fpfl-link);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Tablets and phones: stack, gallery first.
+@media (max-width: 1000px) {
+  .home {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Phones: edge-to-edge, full window width.
+@media (max-width: 640px) {
+  .home {
+    gap: 0;
+  }
+
+  .home__gallery,
+  .home__info {
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

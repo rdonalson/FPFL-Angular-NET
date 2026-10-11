@@ -1,0 +1,59 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--fpfl-header-bg);
+  color: var(--fpfl-header-fg);
+}
+
+.topbar__brand,
+.topbar__repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.topbar__avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.topbar__title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.topbar__repo {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  .pi {
+    font-size: 1.25rem;
+  }
+}
+
+// Phones: keep the GitHub icon, drop its label.
+@media (max-width: 640px) {
+  .topbar {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .topbar__title {
+    font-size: 1rem;
+  }
+
+  .topbar__repo-text {
+    display: none;
+  }
+}

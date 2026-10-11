@@ -1,1 +1,39 @@
-<p>home works!</p>
+<section class="home">
+  <div class="home__gallery">
+    <p-galleria
+      [value]="images"
+      [circular]="true"
+      [autoPlay]="true"
+      [transitionInterval]="5000"
+      [showThumbnails]="false"
+      [showIndicators]="true"
+      [showIndicatorsOnItem]="true"
+      [changeItemOnIndicatorHover]="true"
+      [showItemNavigators]="true"
+      [showItemNavigatorsOnHover]="true"
+    >
+      <ng-template #item let-image>
+        <img class="home__slide" [src]="image.src" [alt]="image.alt" />
+      </ng-template>
+    </p-galleria>
+  </div>
+
+  <aside class="home__info">
+    <h1 class="home__heading">Plan ahead with confidence</h1>
+    <ul class="home__points">
+      <li>
+        Keep your checking or savings account solvent out to any future point in time.
+      </li>
+      <li>
+        Enter your expenses and income with a starting amount, then choose a time frame to see
+        your balance at the end of it.
+      </li>
+      <li>View the forecast as a chart or as a ledger.</li>
+    </ul>
+
+    <a class="home__guide" [href]="guideUrl" target="_blank" rel="noopener">
+      <i class="pi pi-file-pdf" aria-hidden="true"></i>
+      Financial Planner Guide
+    </a>
+  </aside>
+</section>
