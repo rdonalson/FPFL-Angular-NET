@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Display bounded context (mirrors API-JDK module-display-bc): ledger readout and recurrence expanders. Empty for now. -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fpfl.Common\Fpfl.Common.csproj" />
+    <ProjectReference Include="..\Fpfl.Items\Fpfl.Items.csproj" />
+  </ItemGroup>
+
+</Project>

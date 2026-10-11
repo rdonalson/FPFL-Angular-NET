@@ -1,6 +1,21 @@
 @Fpfl.Api_HostAddress = http://localhost:5132
 
-GET {{Fpfl.Api_HostAddress}}/weatherforecast/
+### All item types
+GET {{Fpfl.Api_HostAddress}}/item-types
 Accept: application/json
 
-###
+### One item type
+GET {{Fpfl.Api_HostAddress}}/item-types/1
+Accept: application/json
+
+### Not found -> 404 ApiResponse with correlationId
+GET {{Fpfl.Api_HostAddress}}/item-types/999
+Accept: application/json
+
+### Validation -> 400 ApiResponse
+GET {{Fpfl.Api_HostAddress}}/item-types/0
+Accept: application/json
+
+### Health
+GET {{Fpfl.Api_HostAddress}}/health
+Accept: application/json

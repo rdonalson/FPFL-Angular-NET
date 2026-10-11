@@ -1,9 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Fpfl.Api/Fpfl.Api.csproj" />
-    <Project Path="src/Fpfl.Application/Fpfl.Application.csproj" />
-    <Project Path="src/Fpfl.Domain/Fpfl.Domain.csproj" />
-    <Project Path="src/Fpfl.Infrastructure/Fpfl.Infrastructure.csproj" />
+    <Project Path="src/Fpfl.Auth/Fpfl.Auth.csproj" />
+    <Project Path="src/Fpfl.Common/Fpfl.Common.csproj" />
+    <Project Path="src/Fpfl.Display/Fpfl.Display.csproj" />
+    <Project Path="src/Fpfl.Items/Fpfl.Items.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Fpfl.Api.Tests/Fpfl.Api.Tests.csproj" />

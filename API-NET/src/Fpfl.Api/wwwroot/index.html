@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <title>FPFL API-NET</title>
+
+        <link href="icon.svg" rel="icon" type="image/svg+xml" />
+
+        <style>
+            body {
+                margin: 0;
+                font-family: system-ui, sans-serif;
+                background: #f5f7fa;
+                color: #333;
+            }
+
+            header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 20px;
+                background: #1e293b;
+                color: white;
+            }
+
+            header img {
+                width: 36px;
+                height: 36px;
+            }
+
+            .container {
+                max-width: 900px;
+                margin: 60px auto;
+                padding: 0 20px;
+                text-align: center;
+            }
+
+            h1 {
+                font-size: 2.8rem;
+                margin-bottom: 10px;
+            }
+
+            p {
+                font-size: 1.2rem;
+                color: #555;
+            }
+
+            .card {
+                margin-top: 40px;
+                padding: 25px;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            }
+
+            .status-up {
+                color: #15803d;
+                font-weight: 600;
+            }
+
+            .status-down {
+                color: #b91c1c;
+                font-weight: 600;
+            }
+
+            .pre-block {
+                background: #f5f5f5;
+                padding: 1rem;
+                border-radius: 6px;
+                overflow: auto;
+                white-space: pre-wrap;
+                text-align: justify;
+                width: fit-content;
+                max-width: 100%;
+                box-sizing: border-box;
+                margin: 0 auto;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <img alt="App Icon" src="icon.svg" />
+            <h2>FPFL API-NET</h2>
+        </header>
+        <div class="container">
+            <h1>Welcome</h1>
+            <p>
+                This service exposes modular bounded contexts: Items &amp; Display.
+            </p>
+            <p>You can find the API documentation below.</p>
+            <a href="/swagger-ui">Swagger API Documentation</a>
+            <div class="card">
+                <h3>Application Health</h3>
+                <div id="status"></div>
+                <pre id="raw" class="pre-block"></pre>
+            </div>
+        </div>
+        <script>
+            async function loadHealth() {
+                const statusEl = document.getElementById("status");
+                try {
+                    // /health returns JSON for both 200 (UP) and 503 (DOWN), so read the body either way.
+                    const res = await fetch("/health");
+                    const data = await res.json();
+
+                    const status = data.status || "UNKNOWN";
+                    statusEl.textContent = `Status: ${status}`;
+                    statusEl.className = status === "UP" ? "status-up" : "status-down";
+
+                    document.getElementById("raw").textContent = JSON.stringify(data, null, 2);
+                } catch (e) {
+                    statusEl.textContent = "Error loading health";
+                    statusEl.className = "status-down";
+                }
+            }
+
+            loadHealth();
+        </script>
+    </body>
+</html>

@@ -1,9 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <!-- Composition root (mirrors API-JDK module-api): controllers, response envelope, exception handling. -->
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>fpfl-api-net</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,8 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Fpfl.Application\Fpfl.Application.csproj" />
-    <ProjectReference Include="..\Fpfl.Infrastructure\Fpfl.Infrastructure.csproj" />
+    <ProjectReference Include="..\Fpfl.Auth\Fpfl.Auth.csproj" />
+    <ProjectReference Include="..\Fpfl.Common\Fpfl.Common.csproj" />
+    <ProjectReference Include="..\Fpfl.Display\Fpfl.Display.csproj" />
+    <ProjectReference Include="..\Fpfl.Items\Fpfl.Items.csproj" />
   </ItemGroup>
 
 </Project>
