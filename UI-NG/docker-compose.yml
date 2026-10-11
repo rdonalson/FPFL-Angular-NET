@@ -1,0 +1,12 @@
+# Run the UI on its own:  docker compose up --build   (from UI-NG)
+services:
+  ui:
+    build:
+      context: .
+      args:
+        API_URL: http://localhost:5132
+    image: fpfluingimg
+    container_name: fpfl-ui-ng
+    ports:
+      - "4280:8080"
+    restart: unless-stopped

@@ -1,0 +1,12 @@
+# Production-pointed UI image:  docker compose -f docker-compose.prod.yml up --build
+services:
+  ui:
+    build:
+      context: .
+      args:
+        API_URL: https://api-net.ledger-finance.com
+    image: fpfluingimg:prod
+    container_name: fpfl-ui-ng
+    ports:
+      - "4280:8080"
+    restart: unless-stopped
