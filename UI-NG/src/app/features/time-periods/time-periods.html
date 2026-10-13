@@ -1,0 +1,141 @@
+<section class="page">
+  <header class="page__header">
+    <div>
+      <a class="page__back" routerLink="/">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Home
+      </a>
+      <h1 class="page__title">Time Periods</h1>
+      <p class="page__subtitle">How often a ledger item repeats.</p>
+    </div>
+
+    <div class="page__actions">
+      @if (auth.isAdmin()) {
+        <p-button icon="pi pi-plus" label="Add" (onClick)="openAdd()" />
+      }
+      <p-button
+        icon="pi pi-refresh"
+        label="Refresh"
+        [outlined]="true"
+        [loading]="timePeriods.isLoading()"
+        (onClick)="timePeriods.reload()"
+      />
+    </div>
+  </header>
+
+  @if (error(); as err) {
+    <p-message severity="error" class="page__error">
+      {{ err.message }}
+      @if (err.correlationId) {
+        <span class="page__correlation">Reference: {{ err.correlationId }}</span>
+      }
+    </p-message>
+  }
+
+  <div class="page__card">
+    <p-table
+      [value]="rows()"
+      [loading]="timePeriods.isLoading()"
+      dataKey="id"
+      [stripedRows]="true"
+      [tableStyle]="{ 'min-width': '18rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th class="col-id">ID</th>
+          <th>Name</th>
+          @if (auth.isAdmin()) {
+            <th class="col-actions" aria-label="Actions"></th>
+          }
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-row>
+        <tr>
+          <td class="col-id">{{ row.id }}</td>
+          <td>{{ row.name }}</td>
+          @if (auth.isAdmin()) {
+            <td class="col-actions">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                [ariaLabel]="'Rename ' + row.name"
+                (onClick)="openRename(row)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                [rounded]="true"
+                [ariaLabel]="'Delete ' + row.name"
+                (onClick)="openDelete(row)"
+              />
+            </td>
+          }
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td [attr.colspan]="auth.isAdmin() ? 3 : 2" class="page__empty">
+            {{ timePeriods.isLoading() ? 'Loading…' : 'No time periods found.' }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</section>
+
+<p-dialog
+  [header]="dialogTitle()"
+  [visible]="dialog() !== null"
+  (visibleChange)="visibleChange($event)"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: '26rem' }"
+  [breakpoints]="{ '640px': '95vw' }"
+>
+  @if (dialog(); as state) {
+    <form class="tp-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      @if (dialogError(); as message) {
+        <p-message severity="error">{{ message }}</p-message>
+      }
+
+      @if (state.kind === 'delete') {
+        <p>
+          Delete <strong>{{ state.row.name }}</strong> (ID {{ state.row.id }})? Time periods that
+          items still use can't be deleted.
+        </p>
+      } @else {
+        <div class="tp-field">
+          <label for="tp-id">ID</label>
+          <input pInputText id="tp-id" type="number" min="1" formControlName="id" [fluid]="true" />
+          @if (form.controls.id.touched && form.controls.id.invalid) {
+            <small class="tp-field__error">Enter a positive whole number.</small>
+          }
+        </div>
+
+        <div class="tp-field">
+          <label for="tp-name">Name</label>
+          <input pInputText id="tp-name" type="text" formControlName="name" maxlength="75" [fluid]="true" />
+          @if (form.controls.name.touched && form.controls.name.invalid) {
+            <small class="tp-field__error">
+              Required, up to 75 letters, digits, spaces and - _ ' .
+            </small>
+          }
+        </div>
+      }
+
+      <div class="tp-actions">
+        <p-button type="button" label="Cancel" [text]="true" [disabled]="saving()" (onClick)="close()" />
+        @if (state.kind === 'delete') {
+          <p-button type="submit" label="Delete" icon="pi pi-trash" severity="danger" [loading]="saving()" />
+        } @else {
+          <p-button type="submit" label="Save" icon="pi pi-check" [loading]="saving()" />
+        }
+      </div>
+    </form>
+  }
+</p-dialog>
