@@ -53,4 +53,12 @@ describe('ItemTypes', () => {
     expect(text()).toContain('An unexpected error occurred.');
     expect(text()).toContain('ref-42');
   });
+  it('hides the admin actions from non-admins', async () => {
+    http.expectOne(apiUrl('/item-types')).flush(envelope([{ id: 1, name: 'Credit' }]));
+    await fixture.whenStable();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[aria-label="Edit Credit"]')).toBeNull();
+    expect(el.textContent).not.toContain('Add');
+  });
 });

@@ -13,8 +13,11 @@ public interface ITimePeriodService
     /// <exception cref="Fpfl.Common.Exceptions.DuplicateItemException">The id already exists.</exception>
     Task<TimePeriod> CreateAsync(TimePeriod timePeriod, CancellationToken cancellationToken);
 
+    /// <summary>Renames the time period and, when <paramref name="newId" /> is given and different, changes its id.</summary>
     /// <exception cref="Fpfl.Common.Exceptions.ItemNotFoundException">No time period with that id.</exception>
-    Task<TimePeriod> UpdateNameAsync(long id, string name, CancellationToken cancellationToken);
+    /// <exception cref="Fpfl.Common.Exceptions.DuplicateItemException">The new id already exists.</exception>
+    /// <exception cref="Fpfl.Common.Exceptions.DomainValidationException">The id changes but items still use it.</exception>
+    Task<TimePeriod> UpdateAsync(long id, long? newId, string name, CancellationToken cancellationToken);
 
     /// <exception cref="Fpfl.Common.Exceptions.ItemNotFoundException">No time period with that id.</exception>
     /// <exception cref="Fpfl.Common.Exceptions.DomainValidationException">Items still use this time period.</exception>

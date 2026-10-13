@@ -95,7 +95,7 @@ Content-Type: application/json
   "name": "Test Period"
 }
 
-### Rename (admin)
+### Rename (admin): omit "id" to keep it
 PUT {{Fpfl.Api_HostAddress}}/time-periods/99
 Authorization: Bearer {{adminToken}}
 Content-Type: application/json
@@ -104,8 +104,18 @@ Content-Type: application/json
   "name": "Test Period Renamed"
 }
 
+### Change id 99 -> 97 and rename (admin)
+PUT {{Fpfl.Api_HostAddress}}/time-periods/99
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "id": 97,
+  "name": "Test Period Moved"
+}
+
 ### Delete (admin)
-DELETE {{Fpfl.Api_HostAddress}}/time-periods/99
+DELETE {{Fpfl.Api_HostAddress}}/time-periods/97
 Authorization: Bearer {{adminToken}}
 
 ### Create as guest -> 403 ApiResponse
@@ -159,3 +169,31 @@ Content-Type: application/json
   "correlationId": "ref-123",
   "details": { "component": "ItemTypes" }
 }
+
+# ---------------------------------------------------------------------------
+# Item types CRUD (admin). Reads are above.
+# ---------------------------------------------------------------------------
+
+### Create item type (admin)
+POST {{Fpfl.Api_HostAddress}}/item-types
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "id": 99,
+  "name": "Test Type"
+}
+
+### Change id 99 -> 97 and rename (admin)
+PUT {{Fpfl.Api_HostAddress}}/item-types/99
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "id": 97,
+  "name": "Test Type Moved"
+}
+
+### Delete item type (admin)
+DELETE {{Fpfl.Api_HostAddress}}/item-types/97
+Authorization: Bearer {{adminToken}}

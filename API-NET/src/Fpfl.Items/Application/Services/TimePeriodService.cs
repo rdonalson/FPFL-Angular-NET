@@ -38,18 +38,25 @@ public sealed class TimePeriodService(ITimePeriodRepository repository) : ITimeP
         return timePeriod;
     }
 
-    public async Task<TimePeriod> UpdateNameAsync(long id, string name, CancellationToken cancellationToken)
+    public async Task<TimePeriod> UpdateAsync(long id, long? newId, string name, CancellationToken cancellationToken)
     {
         ValidateId(id);
+        var targetId = newId ?? id;
+        ValidateId(targetId);
         name = ValidateName(name);
 
-        var updated = await repository.UpdateNameAsync(id, name, cancellationToken);
+        if (targetId != id && await repository.ExistsAsync(targetId, cancellationToken))
+        {
+            throw new DuplicateItemException($"TimePeriod {targetId} already exists.");
+        }
+
+        var updated = await repository.UpdateAsync(id, targetId, name, cancellationToken);
         if (updated == 0)
         {
             throw new ItemNotFoundException($"TimePeriod {id} not found");
         }
 
-        return new TimePeriod { Id = id, Name = name };
+        return new TimePeriod { Id = targetId, Name = name };
     }
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken)

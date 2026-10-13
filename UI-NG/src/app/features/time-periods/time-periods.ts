@@ -17,14 +17,14 @@ import { TimePeriod } from './time-period';
 /** What the single edit dialog is doing right now. */
 type DialogState =
   | { kind: 'add' }
-  | { kind: 'rename'; row: TimePeriod }
+  | { kind: 'edit'; row: TimePeriod }
   | { kind: 'delete'; row: TimePeriod };
 
 /** Same character rule as the API's strict sanitizer: letters, digits, space and -_'. */
 const NAME_PATTERN = /^[\p{L}0-9 _'.-]+$/u;
 
 /**
- * Lists time periods from API-NET (GET /time-periods). Admins can add, rename and delete;
+ * Lists time periods from API-NET (GET /time-periods). Admins can add, edit (name and id) and delete;
  * the API enforces the same rule, so the buttons are only a convenience.
  */
 @Component({
@@ -62,8 +62,8 @@ export class TimePeriods {
     switch (this.dialog()?.kind) {
       case 'add':
         return 'Add Time Period';
-      case 'rename':
-        return 'Rename Time Period';
+      case 'edit':
+        return 'Edit Time Period';
       case 'delete':
         return 'Delete Time Period';
       default:
@@ -83,10 +83,9 @@ export class TimePeriods {
     this.open({ kind: 'add' });
   }
 
-  protected openRename(row: TimePeriod): void {
+  protected openEdit(row: TimePeriod): void {
     this.form.reset({ id: row.id, name: row.name });
-    this.form.controls.id.disable(); // ids can't change; the route carries it
-    this.open({ kind: 'rename', row });
+    this.open({ kind: 'edit', row });
   }
 
   protected openDelete(row: TimePeriod): void {
@@ -122,7 +121,7 @@ export class TimePeriods {
       request =
         state.kind === 'add'
           ? this.api.create({ id: id ?? 0, name: trimmed })
-          : this.api.rename(state.row.id, trimmed);
+          : this.api.update(state.row.id, { id: id ?? state.row.id, name: trimmed });
     }
 
     this.saving.set(true);

@@ -10,8 +10,13 @@ public sealed record TimePeriodRequest(
     [MaxLength(75, ErrorMessage = "TimePeriod Name must be at most 75 characters")]
     string Name);
 
-/// <summary>Renames a time period (the id comes from the route).</summary>
-public sealed record UpdateTimePeriodNameRequest(
+/// <summary>
+///     Updates the time period at the route id. <c>name</c> is required (as in API-JDK);
+///     <c>id</c> is optional and, when different from the route id, changes the id.
+/// </summary>
+public sealed record UpdateTimePeriodRequest(
+    [Range(1, long.MaxValue, ErrorMessage = "TimePeriod Id must be a positive integer")]
+    long? Id,
     [Required(ErrorMessage = "TimePeriod Name is required and cannot be blank")]
     [MaxLength(75, ErrorMessage = "TimePeriod Name must be at most 75 characters")]
     string Name);

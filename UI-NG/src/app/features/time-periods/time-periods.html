@@ -60,8 +60,8 @@
                 icon="pi pi-pencil"
                 [text]="true"
                 [rounded]="true"
-                [ariaLabel]="'Rename ' + row.name"
-                (onClick)="openRename(row)"
+                [ariaLabel]="'Edit ' + row.name"
+                (onClick)="openEdit(row)"
               />
               <p-button
                 icon="pi pi-trash"
@@ -114,6 +114,9 @@
           <input pInputText id="tp-id" type="number" min="1" formControlName="id" [fluid]="true" />
           @if (form.controls.id.touched && form.controls.id.invalid) {
             <small class="tp-field__error">Enter a positive whole number.</small>
+          }
+          @if (state.kind === 'edit') {
+            <small class="tp-field__hint">Changing the ID only works while no items use it.</small>
           }
         </div>
 

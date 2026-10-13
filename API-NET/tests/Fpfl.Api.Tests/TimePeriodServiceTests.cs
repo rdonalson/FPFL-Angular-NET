@@ -71,22 +71,47 @@ public sealed class TimePeriodServiceTests
     public async Task Names_over_75_characters_are_rejected()
     {
         await Assert.ThrowsAsync<DomainValidationException>(
-            () => _service.UpdateNameAsync(1, new string('a', 76), default));
+            () => _service.UpdateAsync(1, null, new string('a', 76), default));
     }
 
     [Fact]
-    public async Task Rename_updates_the_row()
+    public async Task Update_without_an_id_only_renames()
     {
-        var updated = await _service.UpdateNameAsync(2, "Every Day", default);
+        var updated = await _service.UpdateAsync(2, null, "Every Day", default);
 
-        Assert.Equal("Every Day", updated.Name);
+        Assert.Equal(2, updated.Id);
         Assert.Equal("Every Day", _repo.Rows[2]);
     }
 
     [Fact]
-    public async Task Rename_of_missing_id_is_not_found()
+    public async Task Update_with_a_new_id_moves_the_row()
     {
-        await Assert.ThrowsAsync<ItemNotFoundException>(() => _service.UpdateNameAsync(9, "X", default));
+        var updated = await _service.UpdateAsync(2, 5, "Every Day", default);
+
+        Assert.Equal(5, updated.Id);
+        Assert.False(_repo.Rows.ContainsKey(2));
+        Assert.Equal("Every Day", _repo.Rows[5]);
+    }
+
+    [Fact]
+    public async Task Update_to_an_existing_id_is_a_duplicate()
+    {
+        var error = await Assert.ThrowsAsync<DuplicateItemException>(() => _service.UpdateAsync(2, 1, "X", default));
+
+        Assert.Equal("TimePeriod 1 already exists.", error.Message);
+        Assert.True(_repo.Rows.ContainsKey(2));
+    }
+
+    [Fact]
+    public async Task Update_to_a_non_positive_id_is_a_validation_error()
+    {
+        await Assert.ThrowsAsync<DomainValidationException>(() => _service.UpdateAsync(2, 0, "X", default));
+    }
+
+    [Fact]
+    public async Task Update_of_missing_id_is_not_found()
+    {
+        await Assert.ThrowsAsync<ItemNotFoundException>(() => _service.UpdateAsync(9, null, "X", default));
     }
 
     [Fact]
@@ -118,14 +143,14 @@ public sealed class TimePeriodServiceTests
             return Task.CompletedTask;
         }
 
-        public Task<int> UpdateNameAsync(long id, string name, CancellationToken cancellationToken)
+        public Task<int> UpdateAsync(long id, long newId, string name, CancellationToken cancellationToken)
         {
-            if (!Rows.ContainsKey(id))
+            if (!Rows.Remove(id))
             {
                 return Task.FromResult(0);
             }
 
-            Rows[id] = name;
+            Rows[newId] = name;
             return Task.FromResult(1);
         }
 

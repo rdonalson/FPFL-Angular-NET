@@ -75,3 +75,45 @@
     box-shadow: none;
   }
 }
+
+// Admin actions and the add / rename / delete dialog (shared with Time Periods).
+
+.page__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.col-actions {
+  width: 7rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tp-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.tp-field {
+  display: grid;
+  gap: 0.35rem;
+
+  label {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+}
+
+.tp-field__error {
+  color: var(--p-red-600, #dc2626);
+}
+
+.tp-field__hint {
+  color: var(--fpfl-muted);
+}
+
+.tp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

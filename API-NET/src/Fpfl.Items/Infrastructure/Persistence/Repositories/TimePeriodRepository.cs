@@ -71,13 +71,22 @@ public sealed class TimePeriodRepository(ItemsDbContext db) : ITimePeriodReposit
         }
     }
 
-    public async Task<int> UpdateNameAsync(long id, string name, CancellationToken cancellationToken)
+    public async Task<int> UpdateAsync(long id, long newId, string name, CancellationToken cancellationToken)
     {
         try
         {
-            return await db.TimePeriods
-                .Where(t => t.Id == id)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.Name, name), cancellationToken);
+            // Raw (parameterized) SQL because EF won't change a primary key through tracking.
+            return await db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE fpfl.time_periods SET id = {newId}, name = {name} WHERE id = {id}",
+                cancellationToken);
+        }
+        catch (Exception ex) when (SqlState(ex) == PostgresErrorCodes.UniqueViolation)
+        {
+            throw new DuplicateItemException($"TimePeriod {newId} already exists.");
+        }
+        catch (Exception ex) when (SqlState(ex) == PostgresErrorCodes.ForeignKeyViolation)
+        {
+            throw new DomainValidationException($"TimePeriod {id} is used by existing items, so its ID cannot be changed");
         }
         catch (Exception ex) when (IsDatabaseFailure(ex))
         {

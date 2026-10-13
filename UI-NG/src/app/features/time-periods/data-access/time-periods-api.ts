@@ -22,8 +22,9 @@ export class TimePeriodsApi {
     return this.http.post<ApiResponse<TimePeriod>>(apiUrl('/time-periods'), timePeriod);
   }
 
-  rename(id: number, name: string): Observable<ApiResponse<TimePeriod>> {
-    return this.http.put<ApiResponse<TimePeriod>>(apiUrl(`/time-periods/${id}`), { name });
+  /** Renames and, when `changes.id` differs from `id`, changes the id too. */
+  update(id: number, changes: TimePeriod): Observable<ApiResponse<TimePeriod>> {
+    return this.http.put<ApiResponse<TimePeriod>>(apiUrl(`/time-periods/${id}`), changes);
   }
 
   remove(id: number): Observable<ApiResponse<null>> {

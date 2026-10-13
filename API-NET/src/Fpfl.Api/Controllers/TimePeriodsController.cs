@@ -62,17 +62,18 @@ public sealed class TimePeriodsController(
         return Created(location, responses.Created(mapper.ToResponse(created), "TimePeriod created successfully", location));
     }
 
-    /// <summary>Renames a time period. Admin only.</summary>
+    /// <summary>Renames a time period and optionally changes its id (send a new <c>id</c> in the body). Admin only.</summary>
     [HttpPut("{id:long}")]
     [Authorize(Roles = AuthClaims.AdminRole)]
     [ProducesResponseType<ApiResponse<TimePeriodResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiResponse<object>>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiResponse<object>>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiResponse<object>>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ApiResponse<object>>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ApiResponse<TimePeriodResponse>>> Update(
-        long id, UpdateTimePeriodNameRequest request, CancellationToken cancellationToken)
+        long id, UpdateTimePeriodRequest request, CancellationToken cancellationToken)
     {
-        var updated = await service.UpdateNameAsync(id, mapper.SanitizeName(request.Name), cancellationToken);
+        var updated = await service.UpdateAsync(id, request.Id, mapper.SanitizeName(request.Name), cancellationToken);
 
         return Ok(responses.Success(mapper.ToResponse(updated), "TimePeriod updated successfully"));
     }

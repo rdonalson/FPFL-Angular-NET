@@ -44,7 +44,7 @@ describe('TimePeriods', () => {
     http.expectOne(apiUrl('/time-periods')).flush(envelope([{ id: 1, name: 'One Time' }]));
     await fixture.whenStable();
 
-    expect(el().querySelector('[aria-label="Rename One Time"]')).toBeNull();
+    expect(el().querySelector('[aria-label="Edit One Time"]')).toBeNull();
     expect(el().textContent).not.toContain('Add');
   });
 
