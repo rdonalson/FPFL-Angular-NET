@@ -1,3 +1,5 @@
+using System.Threading.RateLimiting;
+using Fpfl.Api.Controllers;
 using Fpfl.Api.Exceptions;
 using Fpfl.Api.Health;
 using Fpfl.Api.Mappers;
@@ -44,6 +46,7 @@ builder.Services.PostConfigure<JwtBearerOptions>(
 builder.Services.AddSingleton<IApiResponseFactory, ApiResponseFactory>();
 builder.Services.AddSingleton<ItemTypeMapper>();
 builder.Services.AddSingleton<AuthMapper>();
+builder.Services.AddSingleton<TimePeriodMapper>();
 
 builder.Services.AddControllers();
 
@@ -76,6 +79,19 @@ builder.Services.AddOpenApi(options => options.AddDocumentTransformer((document,
 builder.Services.AddHealthChecks()
     .AddCheck<ItemsDatabaseHealthCheck>("db");
 
+// Anonymous write endpoints (POST /client-logs) are limited per client IP; 429 uses the envelope.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = (context, cancellationToken) => new ValueTask(
+        context.HttpContext.Response.WriteAsJsonAsync(
+            new ApiResponse<object?>(StatusCodes.Status429TooManyRequests, "Too many requests; try again shortly"),
+            cancellationToken));
+    options.AddPolicy(ClientLogsController.RateLimitPolicy, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
+
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .WithOrigins(allowedOrigins)
     .AllowAnyHeader()
@@ -103,6 +119,7 @@ app.UseStaticFiles();
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 // OpenAPI document + Swagger UI (linked from the landing page)
 app.MapOpenApi();                       // /openapi/v1.json

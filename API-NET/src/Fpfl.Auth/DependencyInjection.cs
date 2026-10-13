@@ -35,6 +35,8 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IUserRolesRepository, UserRolesRepository>();
+        services.AddScoped<IUserRolesService, UserRolesService>();
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -71,3 +71,91 @@ Content-Type: application/json
   "currentPassword": "anything",
   "newPassword": "something-new"
 }
+
+# ---------------------------------------------------------------------------
+# Time periods: reads are public; create / rename / delete need an ADMIN token.
+# ---------------------------------------------------------------------------
+@adminToken = paste-admin-access-token-here
+
+### All time periods
+GET {{Fpfl.Api_HostAddress}}/time-periods
+Accept: application/json
+
+### One time period
+GET {{Fpfl.Api_HostAddress}}/time-periods/1
+Accept: application/json
+
+### Create (admin) -> 201 with Location
+POST {{Fpfl.Api_HostAddress}}/time-periods
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "id": 99,
+  "name": "Test Period"
+}
+
+### Rename (admin)
+PUT {{Fpfl.Api_HostAddress}}/time-periods/99
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "name": "Test Period Renamed"
+}
+
+### Delete (admin)
+DELETE {{Fpfl.Api_HostAddress}}/time-periods/99
+Authorization: Bearer {{adminToken}}
+
+### Create as guest -> 403 ApiResponse
+POST {{Fpfl.Api_HostAddress}}/time-periods
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "id": 98,
+  "name": "Nope"
+}
+
+# ---------------------------------------------------------------------------
+# User roles (admin only). Change the user id / role ids to match your data.
+# ---------------------------------------------------------------------------
+
+### A user's roles
+GET {{Fpfl.Api_HostAddress}}/users/2/roles
+Authorization: Bearer {{adminToken}}
+
+### Add role 2 to user 2
+POST {{Fpfl.Api_HostAddress}}/users/2/roles/2
+Authorization: Bearer {{adminToken}}
+
+### Remove role 2 from user 2
+DELETE {{Fpfl.Api_HostAddress}}/users/2/roles/2
+Authorization: Bearer {{adminToken}}
+
+### Replace user 2's roles
+PUT {{Fpfl.Api_HostAddress}}/users/2/roles
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "roleIds": [2]
+}
+
+# ---------------------------------------------------------------------------
+# Client logs (anonymous, rate-limited to 30/minute per IP)
+# ---------------------------------------------------------------------------
+
+### Error log from the UI
+POST {{Fpfl.Api_HostAddress}}/client-logs
+Content-Type: application/json
+
+{
+  "level": "error",
+  "url": "/item-types",
+  "status": 500,
+  "message": "Failed to load item types",
+  "correlationId": "ref-123",
+  "details": { "component": "ItemTypes" }
+}
