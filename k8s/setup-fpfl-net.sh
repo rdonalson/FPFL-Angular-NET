@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# Deploys UI-NG (Angular) and API-NET (.NET) to the existing AKS cluster, next to the
-# React/Java apps, on their own 2-node pool. Run from Azure Cloud Shell (Bash):
+# One-time cluster setup for UI-NG (Angular) and API-NET (.NET), next to the React/Java apps:
+#   1. a dedicated 2-node pool (netpool) that only these two apps run on
+#   2. the api-net-secret (database connection string + JWT signing key)
+#   3. DNS records for ui-ng / api-net (Azure DNS zone, or printed for your registrar)
+# Building images and deploying is done by the GitHub Actions workflows in .github/workflows.
 #
+# Run from Azure Cloud Shell (Bash):
 #   git clone https://github.com/rdonalson/FPFL-Angular-NET.git
 #   cd FPFL-Angular-NET
-#   bash k8s/deploy-fpfl-net.sh
+#   bash k8s/setup-fpfl-net.sh
 #
-# Safe to re-run: existing pieces are kept, images are rebuilt and the pods restarted.
+# Safe to re-run: anything that already exists is left as is.
 set -euo pipefail
 
 # ----------------------------------------------------------------------------- names
@@ -15,17 +19,13 @@ CLUSTER="fpfl-cluster"
 NODEPOOL="netpool"
 NODE_COUNT=2
 NODE_SIZE="Standard_B2s"
-ACR="fpflacr"
 NAMESPACE="fpfl"
 JAVA_DB_SECRET="api-db-secret"      # existing Java secret: DB_URL, DB_USERNAME, DB_PASSWORD
 NET_SECRET="api-net-secret"         # new: ConnectionStrings__Fpfl, Auth__SigningKey
 DOMAIN="ledger-finance.com"
 UI_HOST="ui-ng"
 API_HOST="api-net"
-API_URL="https://${API_HOST}.${DOMAIN}"
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TAG="$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M)"
 
 step() { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
 
@@ -48,15 +48,7 @@ else
     -o table
 fi
 
-# ----------------------------------------------------------------------------- 3. images
-step "Building images in ACR ${ACR} (tag ${TAG} + latest)"
-az acr build -r "$ACR" -t "fpflapinetimg:${TAG}" -t "fpflapinetimg:latest" \
-  "$REPO_ROOT/API-NET" -o table
-az acr build -r "$ACR" -t "fpfluingimg:${TAG}" -t "fpfluingimg:latest" \
-  --build-arg "API_URL=${API_URL}" \
-  "$REPO_ROOT/UI-NG" -o table
-
-# ----------------------------------------------------------------------------- 4. secret
+# ----------------------------------------------------------------------------- 3. secret
 step "Secret ${NET_SECRET}"
 if kubectl get secret "$NET_SECRET" -n "$NAMESPACE" >/dev/null 2>&1; then
   echo "Already exists; keeping it (and the signing key, so nobody gets signed out)."
@@ -80,15 +72,7 @@ else
   echo "Created from ${JAVA_DB_SECRET} (database ${DB_NAME} on ${DB_HOST}) with a new signing key."
 fi
 
-# ----------------------------------------------------------------------------- 5. apply
-step "Applying deployments, services and ingresses"
-kubectl apply -f "$REPO_ROOT/k8s/api-net/"
-kubectl apply -f "$REPO_ROOT/k8s/ui-ng/"
-kubectl rollout restart deployment/api-net deployment/ui-ng -n "$NAMESPACE"   # pick up the new :latest
-kubectl rollout status deployment/api-net -n "$NAMESPACE" --timeout=5m
-kubectl rollout status deployment/ui-ng -n "$NAMESPACE" --timeout=5m
-
-# ----------------------------------------------------------------------------- 6. DNS
+# ----------------------------------------------------------------------------- 4. DNS
 step "DNS for ${UI_HOST}.${DOMAIN} and ${API_HOST}.${DOMAIN}"
 INGRESS_IP="$(kubectl get ingress fpfl-api-ingress -n "$NAMESPACE" -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)"
 if [[ -z "$INGRESS_IP" ]]; then
@@ -113,14 +97,14 @@ else
   echo "  A  ${API_HOST}  -> ${INGRESS_IP:-<ingress IP>}"
 fi
 
-# ----------------------------------------------------------------------------- 7. status
+# ----------------------------------------------------------------------------- 5. status
 step "Status"
-kubectl get pods -n "$NAMESPACE" -l 'app in (fpfl-api-net,fpfl-ui-ng)' -o wide
-kubectl get certificate -n "$NAMESPACE" 2>/dev/null | grep -E 'NAME|net|ng' || true
+kubectl get nodes -l workload=fpfl-net -o wide
 cat <<DONE
 
-Done. Certificates are issued once DNS resolves (usually a few minutes). Then try:
+Setup done. Next: run the two GitHub Actions workflows (Actions tab -> "Build and Push FPFL
+API-NET to ACR" / "... UI-NG ..." -> Run workflow), or push a change under API-NET/ or UI-NG/.
+Certificates are issued once DNS resolves. Then try:
   https://${UI_HOST}.${DOMAIN}
   https://${API_HOST}.${DOMAIN}/swagger-ui
-  https://${API_HOST}.${DOMAIN}/health
 DONE
