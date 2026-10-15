@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: fpfl-ui-ng-service
+    namespace: fpfl
+    labels:
+        app: fpfl-ui-ng
+spec:
+    type: ClusterIP
+    selector:
+        app: fpfl-ui-ng
+    ports:
+        - port: 80
+          targetPort: 8080

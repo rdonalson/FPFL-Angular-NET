@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: fpfl-api-net-service
+    namespace: fpfl
+    labels:
+        app: fpfl-api-net
+spec:
+    type: ClusterIP
+    selector:
+        app: fpfl-api-net
+    ports:
+        - port: 8080
+          targetPort: 8080

@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: api-net
+    namespace: fpfl
+    labels:
+        app: fpfl-api-net
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: fpfl-api-net
+    template:
+        metadata:
+            labels:
+                app: fpfl-api-net
+        spec:
+            # Runs only on the dedicated .NET/Angular node pool (see deploy-fpfl-net.sh).
+            nodeSelector:
+                workload: fpfl-net
+            tolerations:
+                - key: workload
+                  operator: Equal
+                  value: fpfl-net
+                  effect: NoSchedule
+            securityContext:
+                runAsNonRoot: true
+            containers:
+                - name: api-net
+                  image: fpflacr.azurecr.io/fpflapinetimg:latest
+                  imagePullPolicy: Always
+                  ports:
+                      - containerPort: 8080
+                  env:
+                      - name: ASPNETCORE_ENVIRONMENT
+                        value: "Production"
+                      - name: Cors__AllowedOrigins__0
+                        value: "https://ui-ng.ledger-finance.com"
+                  # ConnectionStrings__Fpfl and Auth__SigningKey
+                  envFrom:
+                      - secretRef:
+                            name: api-net-secret
+                  readinessProbe:
+                      httpGet:
+                          path: /health   # includes the database check
+                          port: 8080
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                  livenessProbe:
+                      httpGet:
+                          path: /         # landing page; a database outage should not restart the pod
+                          port: 8080
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+                  resources:
+                      requests:
+                          memory: "128Mi"
+                          cpu: "100m"
+                      limits:
+                          memory: "512Mi"
+                          cpu: "500m"
