@@ -1,0 +1,98 @@
+name: Build and Push FPFL API-NET to ACR
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'API-NET/**'
+      - 'k8s/api-net/**'
+      - '.github/workflows/build-push-api-net.yml'
+
+env:
+  REGISTRY: fpflacr.azurecr.io
+  IMAGE_NAME: fpflapinetimg
+
+# One deployment of this app at a time; a newer push cancels an older run.
+concurrency:
+  group: deploy-api-net
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Run tests
+        working-directory: API-NET
+        run: dotnet test Fpfl.slnx --configuration Release
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./API-NET
+          file: ./API-NET/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha,scope=api-net
+          cache-to: type=gha,mode=max,scope=api-net
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: FPFL-React-Java
+          cluster-name: fpfl-cluster
+
+      - name: Check one-time setup
+        run: |
+          kubectl get secret api-net-secret -n fpfl > /dev/null \
+            || { echo "::error::Secret api-net-secret is missing. Run k8s/setup-fpfl-net.sh in Cloud Shell first."; exit 1; }
+
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/api-net/api-net-service.yaml
+          kubectl apply -f k8s/api-net/api-net-deployment.yaml
+          kubectl apply -f k8s/api-net/api-net-ingress.yaml
+
+      - name: Force rollout to pull new image
+        run: |
+          kubectl rollout restart deployment/api-net -n fpfl
+          kubectl rollout status deployment/api-net -n fpfl --timeout=180s
