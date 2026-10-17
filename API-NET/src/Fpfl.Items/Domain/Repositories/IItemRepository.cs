@@ -11,6 +11,9 @@ public interface IItemRepository
 
     Task<IReadOnlyList<Item>> ListByUserAndTypeAsync(Guid userId, long itemTypeId, CancellationToken cancellationToken);
 
+    /// <summary>Every item the user owns (credits, debits and the initial amount), for the ledger.</summary>
+    Task<IReadOnlyList<Item>> ListByUserAsync(Guid userId, CancellationToken cancellationToken);
+
     /// <returns>The new item's id.</returns>
     /// <exception cref="Fpfl.Common.Exceptions.DomainValidationException">The item type or time period does not exist.</exception>
     Task<long> AddAsync(Item item, CancellationToken cancellationToken);

@@ -1,1 +1,11 @@
-<p>chart works!</p>
+<figure class="chart">
+  <figcaption class="chart__title">Balance</figcaption>
+  <p-chart type="line" [data]="balance().data" [options]="balance().options" height="320px" ariaLabel="Balance by day" />
+</figure>
+
+<figure class="chart chart--flow">
+  <figcaption class="chart__title">Credits and debits by day</figcaption>
+  <p-chart type="bar" [data]="flow().data" [options]="flow().options" height="200px" ariaLabel="Credits and debits by day" />
+</figure>
+
+<p class="chart__note">Hover the charts for each day's amounts. The Ledger tab has the same numbers as a table.</p>

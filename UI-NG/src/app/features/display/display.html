@@ -1,0 +1,116 @@
+<section class="page">
+  <header class="page__header">
+    <div>
+      <a class="page__back" routerLink="/">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Home
+      </a>
+      <h1 class="page__title">
+        <span class="display__badge" aria-hidden="true"><i class="pi pi-chart-line"></i></span>
+        Display
+      </h1>
+      <p class="page__subtitle">Your balance, day by day, from your initial amount, credits and debits.</p>
+    </div>
+  </header>
+
+  <form class="page__card range" (ngSubmit)="calculate()" novalidate>
+    <div class="range__field">
+      <label for="ledger-start">Start date</label>
+      <p-datepicker
+        inputId="ledger-start"
+        name="start"
+        [ngModel]="start()"
+        (ngModelChange)="start.set($event)"
+        dateFormat="mm/dd/yy"
+        [showIcon]="true"
+        [fluid]="true"
+      />
+    </div>
+    <div class="range__field">
+      <label for="ledger-end">End date</label>
+      <p-datepicker
+        inputId="ledger-end"
+        name="end"
+        [ngModel]="end()"
+        (ngModelChange)="end.set($event)"
+        dateFormat="mm/dd/yy"
+        [showIcon]="true"
+        [fluid]="true"
+        [minDate]="start()"
+      />
+    </div>
+    <p-button type="submit" class="range__go" label="Calculate" icon="pi pi-calculator" [loading]="resource.isLoading()" />
+
+    <div class="range__presets" role="group" aria-label="Quick ranges from the start date">
+      @for (preset of presets; track preset.label) {
+        <p-button [label]="preset.label" size="small" [outlined]="true" severity="secondary" (onClick)="applyPreset(preset)" />
+      }
+    </div>
+
+    @if (rangeError(); as message) {
+      <p-message severity="error" class="range__error">{{ message }}</p-message>
+    }
+  </form>
+
+  @if (loadError(); as err) {
+    <p-message severity="error" class="page__error">
+      {{ err.message }}
+      @if (err.correlationId) {
+        <span class="page__correlation">Reference: {{ err.correlationId }}</span>
+      }
+    </p-message>
+  }
+
+  @if (summary(); as s) {
+    <div class="stats" aria-label="Forecast summary">
+      <div class="stat">
+        <span class="stat__label">Starting balance</span>
+        <span class="stat__value">{{ s.startingBalance | currency: 'USD' }}</span>
+        <span class="stat__meta">{{ shownRange() }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat__label">Credits</span>
+        <span class="stat__value stat__value--credit">{{ s.totalCredits | currency: 'USD' }}</span>
+        <span class="stat__meta">{{ s.activeDays }} {{ s.activeDays === 1 ? 'day' : 'days' }} with activity</span>
+      </div>
+      <div class="stat">
+        <span class="stat__label">Debits</span>
+        <span class="stat__value stat__value--debit">{{ s.totalDebits | currency: 'USD' }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat__label">Lowest balance</span>
+        <span class="stat__value" [class.stat__value--debit]="s.lowest.amount < 0">{{ s.lowest.amount | currency: 'USD' }}</span>
+        <span class="stat__meta">on {{ formatDate(s.lowest.date) }}</span>
+      </div>
+      <div class="stat stat--headline">
+        <span class="stat__label">Ending balance</span>
+        <span class="stat__value" [class.stat__value--debit]="s.endingBalance < 0">{{ s.endingBalance | currency: 'USD' }}</span>
+      </div>
+    </div>
+
+    @if (s.firstNegativeDate) {
+      <p-message severity="warn" icon="pi pi-exclamation-triangle" class="display__warning">
+        Your balance drops below $0.00 on {{ formatDate(s.firstNegativeDate) }}.
+      </p-message>
+    }
+
+    <div class="page__card">
+      <p-tabs value="chart">
+        <p-tablist>
+          <p-tab value="chart"><i class="pi pi-chart-line" aria-hidden="true"></i> Chart</p-tab>
+          <p-tab value="ledger"><i class="pi pi-list" aria-hidden="true"></i> Ledger</p-tab>
+        </p-tablist>
+        <p-tabpanels>
+          <p-tabpanel value="chart">
+            <app-ledger-chart [days]="days()" />
+          </p-tabpanel>
+          <p-tabpanel value="ledger" class="display__ledger-panel">
+            <app-ledger [days]="days()" />
+          </p-tabpanel>
+        </p-tabpanels>
+      </p-tabs>
+    </div>
+  } @else if (resource.isLoading()) {
+    <div class="page__card"><p class="page__empty">Building your forecast…</p></div>
+  }
+</section>

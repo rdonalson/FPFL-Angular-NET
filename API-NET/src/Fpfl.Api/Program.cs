@@ -7,6 +7,7 @@ using Fpfl.Api.Responses;
 using Fpfl.Api.Security;
 using Fpfl.Auth;
 using Fpfl.Common;
+using Fpfl.Display;
 using Fpfl.Items;
 using Fpfl.Items.Infrastructure.Health;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -33,6 +34,7 @@ var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get
 // ---------------------------------------------------------------------------
 builder.Services.AddFpflCommon();
 builder.Services.AddFpflItems(connectionString);
+builder.Services.AddFpflDisplay();
 builder.Services.AddFpflAuth(builder.Configuration, connectionString);
 
 // 401/403 from JWT bearer auth use the standard ApiResponse envelope.
@@ -48,6 +50,7 @@ builder.Services.AddSingleton<ItemTypeMapper>();
 builder.Services.AddSingleton<AuthMapper>();
 builder.Services.AddSingleton<TimePeriodMapper>();
 builder.Services.AddSingleton<ItemMapper>();
+builder.Services.AddSingleton<DisplayMapper>();
 
 builder.Services.AddControllers();
 

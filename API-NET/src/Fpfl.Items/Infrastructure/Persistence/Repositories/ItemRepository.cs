@@ -53,6 +53,21 @@ public sealed class ItemRepository(ItemsDbContext db) : IItemRepository
         }
     }
 
+    public async Task<IReadOnlyList<Item>> ListByUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await WithLookups()
+                .Where(i => i.UserId == userId)
+                .OrderBy(i => i.Id)
+                .ToListAsync(cancellationToken);
+        }
+        catch (Exception ex) when (IsDatabaseFailure(ex))
+        {
+            throw new RepositoryException($"Database failure while fetching Items for user {userId}", ex);
+        }
+    }
+
     public async Task<long> AddAsync(Item item, CancellationToken cancellationToken)
     {
         try

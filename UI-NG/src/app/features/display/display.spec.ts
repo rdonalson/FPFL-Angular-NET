@@ -1,0 +1,115 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpTestingController } from '@angular/common/http/testing';
+
+import { appTestProviders, authResponse, envelope } from '../../../testing/test-providers';
+import { apiUrl } from '../../core/api/api-response';
+import { toSession } from '../../core/auth/auth.models';
+import { toIsoDate } from '../item-detail/item-form';
+import { DisplayPage } from './display';
+import { addDays, addMonths, today } from './display.models';
+import { makeDay, sampleLedger } from './testing-ledger';
+
+describe('DisplayPage', () => {
+  let fixture: ComponentFixture<DisplayPage>;
+  let http: HttpTestingController;
+
+  // jsdom has neither ResizeObserver (PrimeNG's tab bar uses it) nor a canvas (Chart.js draws on one).
+  const realResizeObserver = globalThis.ResizeObserver;
+  const realGetContext = HTMLCanvasElement.prototype.getContext;
+  beforeAll(() => {
+    globalThis.ResizeObserver ??= class {
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    } as unknown as typeof ResizeObserver;
+    HTMLCanvasElement.prototype.getContext = (() => null) as unknown as typeof realGetContext;
+  });
+  afterAll(() => {
+    globalThis.ResizeObserver = realResizeObserver;
+    HTMLCanvasElement.prototype.getContext = realGetContext;
+  });
+
+  async function create() {
+    sessionStorage.clear();
+    sessionStorage.setItem('fpfl.session', JSON.stringify(toSession(authResponse())));
+    await TestBed.configureTestingModule({
+      imports: [DisplayPage],
+      providers: appTestProviders(),
+    }).compileComponents();
+
+    http = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(DisplayPage);
+    fixture.detectChanges();
+    TestBed.tick();
+  }
+
+  afterEach(() => http.verify());
+
+  const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+  const ledgerUrl = apiUrl('/display/ledger');
+
+  it('builds the next 90 days on arrival and shows the summary', async () => {
+    await create();
+
+    const request = http.expectOne(ledgerUrl);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      ledgerStartDate: toIsoDate(today()),
+      ledgerEndDate: toIsoDate(addDays(today(), 90)),
+      includeGrouping: false,
+    });
+
+    request.flush(envelope(sampleLedger()));
+    await fixture.whenStable();
+
+    expect(text()).toContain('Starting balance');
+    expect(text()).toContain('$1,000.00');
+    expect(text()).toContain('$2,500.00');
+    expect(text()).toContain('-$2,200.00');
+    expect(text()).toContain('$1,300.00');
+    expect(text()).toContain('1 day with activity');
+    expect(text()).not.toContain('drops below');
+  });
+
+  it('warns when the balance goes negative', async () => {
+    await create();
+
+    http.expectOne(ledgerUrl).flush(
+      envelope([makeDay(1, '2026-10-17', 100), makeDay(2, '2026-10-18', -50, [{ name: 'Car', amount: -150 }])]),
+    );
+    await fixture.whenStable();
+
+    expect(text()).toContain('Your balance drops below $0.00 on Oct 18, 2026.');
+  });
+
+  it('re-runs with a preset range', async () => {
+    await create();
+    http.expectOne(ledgerUrl).flush(envelope(sampleLedger()));
+    await fixture.whenStable();
+
+    const presetButton = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === '1 year',
+    )!;
+    presetButton.click();
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const request = http.expectOne(ledgerUrl);
+    expect(request.request.body.ledgerStartDate).toBe(toIsoDate(today()));
+    expect(request.request.body.ledgerEndDate).toBe(toIsoDate(addMonths(today(), 12)));
+    request.flush(envelope(sampleLedger()));
+    await fixture.whenStable();
+  });
+
+  it('shows the API error', async () => {
+    await create();
+
+    http
+      .expectOne(ledgerUrl)
+      .flush(envelope(null, 400, 'A ledger can cover at most 10 years', 'ref-1'), { status: 400, statusText: 'Bad Request' });
+    await fixture.whenStable();
+
+    expect(text()).toContain('A ledger can cover at most 10 years');
+    expect(text()).toContain('Reference: ref-1');
+  });
+});

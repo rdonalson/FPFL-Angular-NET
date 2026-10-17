@@ -127,6 +127,9 @@ public sealed class InitialAmountServiceTests
         public Task<IReadOnlyList<Item>> ListByUserAndTypeAsync(Guid userId, long itemTypeId, CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<Item>>(Items.Where(i => i.UserId == userId && i.ItemTypeId == itemTypeId).ToList());
 
+        public Task<IReadOnlyList<Item>> ListByUserAsync(Guid userId, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<Item>>(Items.Where(i => i.UserId == userId).ToList());
+
         public Task<long> AddAsync(Item item, CancellationToken cancellationToken)
         {
             item.Id = Items.Max(i => i.Id) + 1;

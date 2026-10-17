@@ -25,6 +25,7 @@ export const MENU: readonly MenuSection[] = [
       { label: 'Initial Amount', icon: 'pi pi-wallet', to: '/initial-amount' },
       { label: 'Credits', icon: 'pi pi-arrow-down-left', to: '/credits' },
       { label: 'Debits', icon: 'pi pi-arrow-up-right', to: '/debits' },
+      { label: 'Display', icon: 'pi pi-chart-line', to: '/display' },
     ],
   },
   {

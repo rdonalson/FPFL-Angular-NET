@@ -1,0 +1,128 @@
+// Page layout comes from ../item-types/item-types.scss.
+
+.page__title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.display__badge {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(10rem, 14rem)) auto;
+  align-items: end;
+  gap: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  overflow: visible;
+}
+
+.range__field {
+  display: grid;
+  gap: 0.35rem;
+
+  label {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+}
+
+.range__go {
+  justify-self: start;
+}
+
+.range__presets {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.range__error {
+  grid-column: 1 / -1;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.stat {
+  display: grid;
+  gap: 0.2rem;
+  align-content: start;
+  padding: 1rem 1.1rem;
+  background: var(--fpfl-surface);
+  border-radius: 12px;
+  box-shadow: var(--fpfl-shadow);
+}
+
+.stat--headline {
+  border-top: 3px solid #2563eb;
+}
+
+.stat__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fpfl-muted);
+}
+
+.stat__value {
+  font-size: 1.45rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--fpfl-text);
+}
+
+.stat__value--credit {
+  color: var(--p-green-700, #15803d);
+}
+
+.stat__value--debit {
+  color: var(--p-red-700, #b91c1c);
+}
+
+.stat__meta {
+  font-size: 0.82rem;
+  color: var(--fpfl-muted);
+}
+
+.display__warning {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+// The ledger brings its own toolbar and table edges.
+:host ::ng-deep .display__ledger-panel.p-tabpanel {
+  padding: 0;
+}
+
+@media (max-width: 640px) {
+  .range {
+    grid-template-columns: 1fr;
+    padding: 1rem 0.75rem;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    padding: 0 0.75rem;
+  }
+
+  .stat--headline {
+    grid-column: 1 / -1;
+  }
+}

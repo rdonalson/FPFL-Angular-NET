@@ -1,1 +1,109 @@
-<p>ledger works!</p>
+<div class="ledger__toolbar">
+  <label class="ledger__switch">
+    <p-toggleswitch [ngModel]="activeOnly()" (ngModelChange)="activeOnly.set($event)" inputId="ledger-active-only" />
+    <span>Only days with activity</span>
+  </label>
+  <span class="ledger__spacer"></span>
+  <p-button label="Expand all" icon="pi pi-angle-double-down" [text]="true" size="small" (onClick)="expandAll()" />
+  <p-button label="Collapse all" icon="pi pi-angle-double-up" [text]="true" size="small" (onClick)="collapseAll()" />
+</div>
+
+<p-table
+  [value]="rows()"
+  dataKey="rollupKey"
+  [expandedRowKeys]="expanded()"
+  [stripedRows]="true"
+  [paginator]="rows().length > 31"
+  [rows]="31"
+  [rowsPerPageOptions]="[31, 92, 366]"
+  [tableStyle]="{ 'min-width': '44rem' }"
+>
+  <ng-template #header>
+    <tr>
+      <th class="col-toggle" aria-label="Details"></th>
+      <th>Date</th>
+      <th class="col-money">Credits</th>
+      <th class="col-money">Debits</th>
+      <th class="col-money">Net change</th>
+      <th class="col-money">Balance</th>
+    </tr>
+  </ng-template>
+
+  <ng-template #body let-day let-expanded="expanded">
+    <tr [class.ledger__row--quiet]="day.items.length === 0">
+      <td class="col-toggle">
+        @if (day.items.length > 0) {
+          <p-button
+            [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            [ariaLabel]="(expanded ? 'Hide' : 'Show') + ' items for ' + longDay(day.wDate)"
+            (onClick)="toggle(day)"
+          />
+        }
+      </td>
+      <td class="ledger__date">
+        {{ longDay(day.wDate) }}
+        @if (day.items.length > 0) {
+          <span class="ledger__count">{{ day.items.length }} {{ day.items.length === 1 ? 'item' : 'items' }}</span>
+        }
+      </td>
+      <td class="col-money">
+        @if (day.creditSummary) {
+          <span class="ledger__credit">{{ day.creditSummary | currency: 'USD' }}</span>
+        } @else {
+          <span class="ledger__none">—</span>
+        }
+      </td>
+      <td class="col-money">
+        @if (day.debitSummary) {
+          <span class="ledger__debit">{{ day.debitSummary | currency: 'USD' }}</span>
+        } @else {
+          <span class="ledger__none">—</span>
+        }
+      </td>
+      <td class="col-money">
+        @if (day.net) {
+          <span [class.ledger__credit]="day.net > 0" [class.ledger__debit]="day.net < 0">{{ day.net | currency: 'USD' }}</span>
+        } @else {
+          <span class="ledger__none">—</span>
+        }
+      </td>
+      <td class="col-money ledger__balance" [class.ledger__balance--negative]="day.runningTotal < 0">
+        {{ day.runningTotal | currency: 'USD' }}
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template #expandedrow let-day>
+    <tr class="ledger__detail-row">
+      <td colspan="6">
+        <ul class="ledger__items">
+          @for (item of day.items; track item.itemKey) {
+            <li class="ledger__item">
+              <p-tag
+                [value]="item.amount < 0 ? 'Debit' : 'Credit'"
+                [severity]="item.amount < 0 ? 'danger' : 'success'"
+                [icon]="item.amount < 0 ? 'pi pi-arrow-up-right' : 'pi pi-arrow-down-left'"
+              />
+              <span class="ledger__item-name">{{ item.name }}</span>
+              <span class="ledger__item-period">{{ item.period }}</span>
+              <span class="ledger__item-amount" [class.ledger__credit]="item.amount > 0" [class.ledger__debit]="item.amount < 0">
+                {{ item.amount | currency: 'USD' }}
+              </span>
+            </li>
+          }
+        </ul>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template #emptymessage>
+    <tr>
+      <td colspan="6" class="ledger__empty">
+        {{ activeOnly() ? 'No credits or debits fall in this range.' : 'No days to show.' }}
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

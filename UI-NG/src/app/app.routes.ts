@@ -24,6 +24,12 @@ export const routes: Routes = [
   ...itemRoutes('credits', ITEM_TYPE.credit, 'Credit'),
   ...itemRoutes('debits', ITEM_TYPE.debit, 'Debit'),
   {
+    path: 'display',
+    title: 'Display | FPFL',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/display/display').then((m) => m.DisplayPage),
+  },
+  {
     path: 'item-types',
     title: 'Item Types | FPFL',
     canActivate: [authGuard],

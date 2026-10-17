@@ -175,6 +175,9 @@ public sealed class ItemServiceTests
                 .OrderBy(i => i.Name)
                 .ToList());
 
+        public Task<IReadOnlyList<Item>> ListByUserAsync(Guid userId, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<Item>>(Items.Where(i => i.UserId == userId).ToList());
+
         public Task<long> AddAsync(Item item, CancellationToken cancellationToken)
         {
             item.Id = Items.Max(i => i.Id) + 1;

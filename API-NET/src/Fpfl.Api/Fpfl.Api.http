@@ -295,3 +295,39 @@ Content-Type: application/json
 {
   "amount": -1
 }
+
+# ---------------------------------------------------------------------------
+# Display: the forecast ledger (signed in). userId is optional (defaults to you).
+# ---------------------------------------------------------------------------
+
+### My ledger for the next 90 days
+POST {{Fpfl.Api_HostAddress}}/display/ledger
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "ledgerStartDate": "2026-10-17",
+  "ledgerEndDate": "2027-01-15",
+  "includeGrouping": false
+}
+
+### End before start -> 400
+POST {{Fpfl.Api_HostAddress}}/display/ledger
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "ledgerStartDate": "2026-10-17",
+  "ledgerEndDate": "2026-10-01"
+}
+
+### Someone else's ledger -> 403 (unless you're an admin)
+POST {{Fpfl.Api_HostAddress}}/display/ledger
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "userId": "00000000-0000-0000-0000-000000000001",
+  "ledgerStartDate": "2026-10-17",
+  "ledgerEndDate": "2026-11-17"
+}
