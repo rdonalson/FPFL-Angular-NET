@@ -40,6 +40,10 @@
       @if (auth.isAuthenticated()) {
         <p class="home__start-text">Signed in as {{ auth.displayName() }}.</p>
         <div class="home__start-actions">
+          <a routerLink="/initial-amount" class="home__start-link">
+            <i class="pi pi-wallet" aria-hidden="true"></i>
+            Initial Amount
+          </a>
           <a routerLink="/credits" class="home__start-link">
             <i class="pi pi-arrow-down-left" aria-hidden="true"></i>
             Credits

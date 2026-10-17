@@ -137,3 +137,13 @@ export const NTH_OPTIONS: readonly Option[] = [
   { label: '4th', value: 4 },
   { label: 'Last', value: -1 },
 ];
+
+/** GET /initial-amount/{userId}: the starting balance; beginDate is when it was last set. */
+export interface InitialAmount {
+  id: number;
+  userId: string;
+  name: string;
+  amount: number;
+  itemType: Lookup | null;
+  beginDate: string | null;
+}

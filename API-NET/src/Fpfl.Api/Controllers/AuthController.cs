@@ -2,6 +2,7 @@ using Fpfl.Api.Dtos.Auth;
 using Fpfl.Api.Mappers;
 using Fpfl.Api.Responses;
 using Fpfl.Auth.Application.Services;
+using Fpfl.Items.Domain.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,8 +18,10 @@ namespace Fpfl.Api.Controllers;
 [Tags("Auth")]
 public sealed class AuthController(
     IAuthService authService,
+    IInitialAmountService initialAmounts,
     AuthMapper mapper,
-    IApiResponseFactory responses) : ControllerBase
+    IApiResponseFactory responses,
+    ILogger<AuthController> logger) : ControllerBase
 {
     /// <summary>Signs in with email and password.</summary>
     [HttpPost("login")]
@@ -42,7 +45,7 @@ public sealed class AuthController(
         return Ok(responses.Success(mapper.ToResponse(session), "Guest session started"));
     }
 
-    /// <summary>Creates an account (role ROLE_USER) and signs it in.</summary>
+    /// <summary>Creates an account (role ROLE_USER) with a $0.00 initial amount, and signs it in.</summary>
     [HttpPost("register")]
     [AllowAnonymous]
     [ProducesResponseType<ApiResponse<AuthResponse>>(StatusCodes.Status200OK)]
@@ -52,6 +55,19 @@ public sealed class AuthController(
     {
         var session = await authService.RegisterAsync(
             request.Email, request.Password, request.First, request.Last, cancellationToken);
+
+        // Give every new user a starting balance (as the original version did). The account already
+        // exists, so a failure here must not fail the registration; the Initial Amount page creates
+        // the amount on first visit anyway.
+        try
+        {
+            await initialAmounts.EnsureAsync(session.User.UserId, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Could not create the initial amount for new user {UserId}", session.User.UserId);
+        }
+
         return Ok(responses.Success(mapper.ToResponse(session), "Registration successful"));
     }
 

@@ -4,9 +4,10 @@ import { ButtonModule } from 'primeng/button';
 
 import { AuthService } from '../../auth/auth';
 import { AuthUi } from '../../auth/auth-ui';
+import { Layout } from '../layout';
 
 /**
- * Top bar: avatar + app title (links home), GitHub link, and the auth controls
+ * Top bar: menu button (signed in), avatar + app title (links home), GitHub link, and the auth controls
  * (Guest Login / Login / Register, or the user's name / Change Password / Logout).
  * Same controls as UI-TSX's AppTopMenu; Change Password is hidden for the guest.
  */
@@ -20,6 +21,7 @@ import { AuthUi } from '../../auth/auth-ui';
 export class Topbar {
   protected readonly auth = inject(AuthService);
   protected readonly ui = inject(AuthUi);
+  protected readonly layout = inject(Layout);
 
   protected readonly title = 'Financial Planner Forecast Ledger';
   protected readonly repoUrl = 'https://github.com/rdonalson/FPFL-Angular-NET';

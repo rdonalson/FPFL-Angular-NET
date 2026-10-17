@@ -14,6 +14,13 @@ export const routes: Routes = [
     title: 'Home | FPFL',
     loadComponent: () => import('./features/home/home').then((m) => m.Home),
   },
+  {
+    path: 'initial-amount',
+    title: 'Initial Amount | FPFL',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/item-detail/initial-amount/initial-amount').then((m) => m.InitialAmountPage),
+  },
   ...itemRoutes('credits', ITEM_TYPE.credit, 'Credit'),
   ...itemRoutes('debits', ITEM_TYPE.debit, 'Debit'),
   {

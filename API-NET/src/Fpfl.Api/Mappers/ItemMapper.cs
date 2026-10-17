@@ -1,3 +1,4 @@
+using Fpfl.Api.Dtos.InitialAmounts;
 using Fpfl.Api.Dtos.ItemTypes;
 using Fpfl.Api.Dtos.Items;
 using Fpfl.Api.Dtos.TimePeriods;
@@ -44,6 +45,14 @@ public sealed class ItemMapper
         NthIndex = request.NthIndex,
         DateRangeReq = request.DateRangeReq,
     };
+
+    public InitialAmountResponse ToInitialAmountResponse(Item item) => new(
+        item.Id,
+        item.UserId,
+        item.Name ?? string.Empty,
+        item.Amount ?? 0,
+        item.ItemType is null ? null : new ItemTypeResponse(item.ItemType.Id, item.ItemType.Name),
+        item.BeginDate);
 
     public ItemResponse ToResponse(Item item) => new(
         item.Id,

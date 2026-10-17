@@ -12,6 +12,7 @@ import { RegisterDialog } from './core/auth/ui/register-dialog/register-dialog';
 import { SessionExpiringDialog } from './core/auth/ui/session-expiring-dialog/session-expiring-dialog';
 import { LoadingService } from './core/http/loading';
 import { Footer } from './core/layout/footer/footer';
+import { Sidebar } from './core/layout/sidebar/sidebar';
 import { Topbar } from './core/layout/topbar/topbar';
 
 /**
@@ -22,6 +23,7 @@ import { Topbar } from './core/layout/topbar/topbar';
   imports: [
     RouterOutlet,
     Topbar,
+    Sidebar,
     Footer,
     ToastModule,
     ProgressBarModule,

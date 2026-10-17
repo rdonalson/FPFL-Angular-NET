@@ -1,8 +1,21 @@
 <header class="topbar">
-  <a class="topbar__brand" routerLink="/">
-    <img class="topbar__avatar" src="images/avatar.jpg" alt="" width="36" height="36" />
-    <span class="topbar__title">{{ title }}</span>
-  </a>
+  <div class="topbar__start">
+    @if (auth.isAuthenticated()) {
+      <button
+        type="button"
+        class="topbar__menu"
+        aria-label="Open menu"
+        [attr.aria-expanded]="layout.menuOpen()"
+        (click)="layout.toggleMenu()"
+      >
+        <i class="pi pi-bars" aria-hidden="true"></i>
+      </button>
+    }
+    <a class="topbar__brand" routerLink="/">
+      <img class="topbar__avatar" src="images/avatar.jpg" alt="" width="36" height="36" />
+      <span class="topbar__title">{{ title }}</span>
+    </a>
+  </div>
 
   <nav class="topbar__actions" aria-label="Account">
     @if (auth.isAuthenticated()) {

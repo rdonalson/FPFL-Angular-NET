@@ -1,1 +1,42 @@
-<p>sidebar works!</p>
+<p-drawer
+  [visible]="visible()"
+  (visibleChange)="visibleChange($event)"
+  position="left"
+  [modal]="true"
+  [blockScroll]="true"
+  header="Menu"
+  styleClass="sidebar"
+>
+  <nav class="sidebar__nav" aria-label="Main">
+    @for (section of sections(); track section.label) {
+      <div class="sidebar__section">
+        <h2 class="sidebar__heading">{{ section.label }}</h2>
+        <ul class="sidebar__list" role="list">
+          @for (link of section.items; track link.to) {
+            <li>
+              <a
+                class="sidebar__link"
+                [routerLink]="link.to"
+                routerLinkActive="sidebar__link--active"
+                [routerLinkActiveOptions]="{ exact: link.to === '/' }"
+                ariaCurrentWhenActive="page"
+                (click)="layout.closeMenu()"
+              >
+                <i [class]="link.icon" aria-hidden="true"></i>
+                <span>{{ link.label }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </nav>
+
+  <p class="sidebar__user">
+    <i class="pi pi-user" aria-hidden="true"></i>
+    {{ auth.displayName() }}
+    @if (auth.isAdmin()) {
+      <span class="sidebar__role">Admin</span>
+    }
+  </p>
+</p-drawer>

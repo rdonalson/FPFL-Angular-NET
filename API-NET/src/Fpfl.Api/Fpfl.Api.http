@@ -269,3 +269,29 @@ Content-Type: application/json
 ### Delete it
 DELETE {{Fpfl.Api_HostAddress}}/items/1
 Authorization: Bearer {{accessToken}}
+
+# ---------------------------------------------------------------------------
+# Initial amount (signed in). The GET creates $0.00 if you don't have one yet.
+# ---------------------------------------------------------------------------
+
+### My initial amount
+GET {{Fpfl.Api_HostAddress}}/initial-amount/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### Change it (use the id from the GET)
+PUT {{Fpfl.Api_HostAddress}}/initial-amount/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "amount": 2500
+}
+
+### Negative -> 400
+PUT {{Fpfl.Api_HostAddress}}/initial-amount/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "amount": -1
+}

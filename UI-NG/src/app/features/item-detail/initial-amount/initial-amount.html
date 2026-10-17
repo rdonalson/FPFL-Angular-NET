@@ -1,1 +1,62 @@
-<p>initial-amount works!</p>
+<section class="page">
+  <header class="page__header">
+    <div>
+      <a class="page__back" routerLink="/">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Home
+      </a>
+      <h1 class="page__title">Initial Amount</h1>
+      <p class="page__subtitle">Your starting balance. The forecast builds forward from here.</p>
+    </div>
+  </header>
+
+  @if (loadError(); as err) {
+    <p-message severity="error" class="page__error">
+      {{ err.message }}
+      @if (err.correlationId) {
+        <span class="page__correlation">Reference: {{ err.correlationId }}</span>
+      }
+    </p-message>
+  }
+
+  <div class="page__card balance">
+    @if (current(); as ia) {
+      <span class="balance__icon" aria-hidden="true"><i class="pi pi-wallet"></i></span>
+
+      @if (!editing()) {
+        <div class="balance__body">
+          <span class="balance__label">Starting balance</span>
+          <span class="balance__amount">{{ ia.amount | currency: 'USD' }}</span>
+          @if (setOn()) {
+            <span class="balance__meta">Set on {{ setOn() }}</span>
+          }
+        </div>
+        <p-button icon="pi pi-pencil" label="Edit" [outlined]="true" (onClick)="startEdit()" />
+      } @else {
+        <form class="balance__body balance__form" (ngSubmit)="save()" novalidate>
+          <label class="balance__label" for="ia-amount">Starting balance</label>
+          <p-inputnumber
+            inputId="ia-amount"
+            name="amount"
+            [ngModel]="draft()"
+            (ngModelChange)="draft.set($event)"
+            mode="currency"
+            currency="USD"
+            locale="en-US"
+            [fluid]="true"
+            [autofocus]="true"
+          />
+          @if (problem(); as message) {
+            <p-message severity="error">{{ message }}</p-message>
+          }
+          <div class="balance__actions">
+            <p-button label="Cancel" [text]="true" [disabled]="saving()" (onClick)="cancel()" />
+            <p-button type="submit" label="Save" icon="pi pi-check" [loading]="saving()" />
+          </div>
+        </form>
+      }
+    } @else if (resource.isLoading()) {
+      <p class="page__empty">Loading…</p>
+    }
+  </div>
+</section>

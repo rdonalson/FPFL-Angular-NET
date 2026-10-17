@@ -1,0 +1,64 @@
+// Page layout comes from ../../item-types/item-types.scss.
+
+.balance {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  max-width: 36rem;
+}
+
+.balance__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  font-size: 1.35rem;
+  color: var(--p-primary-color, #10b981);
+  background: var(--p-primary-50, #ecfdf5);
+}
+
+.balance__body {
+  display: grid;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.balance__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fpfl-muted);
+}
+
+.balance__amount {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.balance__meta {
+  color: var(--fpfl-muted);
+  font-size: 0.9rem;
+}
+
+.balance__form {
+  gap: 0.6rem;
+}
+
+.balance__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .balance {
+    flex-wrap: wrap;
+    max-width: none;
+    padding: 1.25rem 0.75rem;
+  }
+}
