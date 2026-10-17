@@ -51,6 +51,19 @@
   white-space: nowrap;
 }
 
+.items__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--fpfl-border);
+}
+
+.items__filter {
+  flex: 1;
+  max-width: 22rem;
+}
+
 .col-actions {
   width: 6.5rem;
   text-align: right;

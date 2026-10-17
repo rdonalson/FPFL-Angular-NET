@@ -98,6 +98,37 @@ describe('ItemList', () => {
     expect(text()).toContain('No debits yet.');
   });
 
+  it('filters rows by any word in the name, period or schedule', async () => {
+    await create(1);
+    http.expectOne(apiUrl(`/items/${userId}/1`)).flush(
+      envelope([
+        makeItem(PERIOD.biMonthly, { id: 1, name: 'Salary', biMonthlyDay1: 1, biMonthlyDay2: 15 }),
+        makeItem(PERIOD.oneTime, { id: 2, name: 'Tax Refund', beginDate: '2026-04-15' }),
+        makeItem(PERIOD.monthly, { id: 3, name: 'Side Gig', monthlyDom: 15 }),
+      ]),
+    );
+    await fixture.whenStable();
+
+    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[type="search"]')!;
+    const type = async (value: string) => {
+      input.value = value;
+      input.dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+    };
+
+    await type('refund');
+    expect(text()).toContain('Tax Refund');
+    expect(text()).not.toContain('Salary');
+    expect(text()).toContain('1 of 3 items');
+
+    await type('SALARY 15th');
+    expect(text()).toContain('Salary');
+    expect(text()).not.toContain('Side Gig');
+
+    await type('nothing like this');
+    expect(text()).toContain('No credits match “nothing like this”.');
+  });
+
   it('shows the API error message and reference', async () => {
     await create(1);
 

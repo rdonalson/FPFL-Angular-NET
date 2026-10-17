@@ -4,6 +4,9 @@ import { RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -31,7 +34,18 @@ interface ItemRow {
  */
 @Component({
   selector: 'app-item-list',
-  imports: [RouterLink, CurrencyPipe, ButtonModule, DialogModule, MessageModule, TableModule, TagModule],
+  imports: [
+    RouterLink,
+    CurrencyPipe,
+    ButtonModule,
+    DialogModule,
+    IconFieldModule,
+    InputIconModule,
+    InputTextModule,
+    MessageModule,
+    TableModule,
+    TagModule,
+  ],
   templateUrl: './item-list.html',
   styleUrls: ['../../item-types/item-types.scss', './item-list.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -64,6 +78,21 @@ export class ItemList {
       dates: describeDateRange(item),
     })),
   );
+
+  /** What the user typed in the filter box. */
+  protected readonly filter = signal('');
+
+  /** Rows whose name, period, schedule, dates or amount contain every word typed (any order, any case). */
+  protected readonly filteredRows = computed(() => {
+    const words = this.filter().toLowerCase().split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      return this.rows();
+    }
+    return this.rows().filter((row) => {
+      const haystack = [row.name, row.period, row.schedule, row.dates, row.amount.toFixed(2)].join(' ').toLowerCase();
+      return words.every((word) => haystack.includes(word));
+    });
+  });
 
   protected readonly error = computed(() => {
     const error = this.items.error();

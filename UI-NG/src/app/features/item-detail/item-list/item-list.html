@@ -36,12 +36,30 @@
   }
 
   <div class="page__card">
+    <div class="items__toolbar">
+      <p-iconfield class="items__filter">
+        <p-inputicon class="pi pi-search" />
+        <input
+          pInputText
+          type="search"
+          [placeholder]="'Filter ' + title().toLowerCase() + '…'"
+          [attr.aria-label]="'Filter ' + title().toLowerCase()"
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+          [fluid]="true"
+        />
+      </p-iconfield>
+      @if (filter()) {
+        <p-button icon="pi pi-times" label="Clear" [text]="true" size="small" (onClick)="filter.set('')" />
+      }
+    </div>
+
     <p-table
-      [value]="rows()"
+      [value]="filteredRows()"
       [loading]="items.isLoading()"
       dataKey="item.id"
       [stripedRows]="true"
-      [paginator]="rows().length > 10"
+      [paginator]="filteredRows().length > 10"
       [rows]="10"
       sortField="name"
       [sortOrder]="1"
@@ -90,7 +108,13 @@
       <ng-template #emptymessage>
         <tr>
           <td colspan="6" class="page__empty">
-            {{ items.isLoading() ? 'Loading…' : 'No ' + title().toLowerCase() + ' yet. Use “New ' + noun() + '” to add one.' }}
+            @if (items.isLoading()) {
+              Loading…
+            } @else if (filter() && rows().length > 0) {
+              No {{ title().toLowerCase() }} match “{{ filter() }}”.
+            } @else {
+              No {{ title().toLowerCase() }} yet. Use “New {{ noun() }}” to add one.
+            }
           </td>
         </tr>
       </ng-template>
@@ -98,7 +122,13 @@
   </div>
 
   @if (rows().length > 0) {
-    <p class="items__count">{{ rows().length }} {{ rows().length === 1 ? 'item' : 'items' }}</p>
+    <p class="items__count">
+      @if (filter()) {
+        {{ filteredRows().length }} of {{ rows().length }} items
+      } @else {
+        {{ rows().length }} {{ rows().length === 1 ? 'item' : 'items' }}
+      }
+    </p>
   }
 </section>
 
