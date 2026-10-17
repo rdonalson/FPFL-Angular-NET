@@ -25,6 +25,9 @@ public static class DependencyInjection
         services.AddScoped<ITimePeriodRepository, TimePeriodRepository>();
         services.AddScoped<ITimePeriodService, TimePeriodService>();
 
+        services.AddScoped<IItemRepository, ItemRepository>();
+        services.AddScoped<IItemService, ItemService>();
+
         return services;
     }
 }

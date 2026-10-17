@@ -47,6 +47,7 @@ builder.Services.AddSingleton<IApiResponseFactory, ApiResponseFactory>();
 builder.Services.AddSingleton<ItemTypeMapper>();
 builder.Services.AddSingleton<AuthMapper>();
 builder.Services.AddSingleton<TimePeriodMapper>();
+builder.Services.AddSingleton<ItemMapper>();
 
 builder.Services.AddControllers();
 

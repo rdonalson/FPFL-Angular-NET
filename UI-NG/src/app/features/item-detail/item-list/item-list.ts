@@ -1,9 +1,69 @@
-import { Component } from '@angular/core';
+import { CurrencyPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
+import { MessageModule } from 'primeng/message';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
+import { ApiError, errorMessage } from '../../../core/api/api-response';
+import { ItemApi } from '../data-access/item-api';
+import { ITEM_TYPE, Item } from '../item';
+import { describeDateRange, describeSchedule } from '../schedule';
+
+/** A table row: the item plus the text the template shows. */
+interface ItemRow {
+  item: Item;
+  name: string;
+  amount: number;
+  period: string;
+  schedule: string;
+  dates: string;
+}
+
+/**
+ * The signed-in user's credits or debits (UI-TSX's ItemsListPage). The route supplies
+ * `itemType` (1 = credits, 2 = debits) through component input binding.
+ */
 @Component({
-  imports: [],
   selector: 'app-item-list',
-  styleUrl: './item-list.scss',
+  imports: [RouterLink, CurrencyPipe, ButtonModule, MessageModule, TableModule, TagModule],
   templateUrl: './item-list.html',
+  styleUrls: ['../../item-types/item-types.scss', './item-list.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ItemList {}
+export class ItemList {
+  /** 1 = credits, 2 = debits. */
+  readonly itemType = input.required<number>();
+
+  protected readonly items = inject(ItemApi).listForCurrentUser(this.itemType);
+
+  protected readonly isCredit = computed(() => this.itemType() === ITEM_TYPE.credit);
+  protected readonly title = computed(() => (this.isCredit() ? 'Credits' : 'Debits'));
+  protected readonly subtitle = computed(() =>
+    this.isCredit() ? 'Money coming in: pay, refunds, transfers in.' : 'Money going out: bills, payments, subscriptions.',
+  );
+
+  protected readonly rows = computed<ItemRow[]>(() =>
+    // value() throws while the resource is in an error state, so read it only when there is one.
+    (this.items.hasValue() ? (this.items.value()?.data ?? []) : []).map((item) => ({
+      item,
+      name: item.name,
+      amount: item.amount,
+      period: item.timePeriod?.name ?? '—',
+      schedule: describeSchedule(item),
+      dates: describeDateRange(item),
+    })),
+  );
+
+  protected readonly error = computed(() => {
+    const error = this.items.error();
+    if (!error) {
+      return null;
+    }
+    return {
+      message: errorMessage(error),
+      correlationId: error instanceof ApiError ? error.correlationId : '',
+    };
+  });
+}

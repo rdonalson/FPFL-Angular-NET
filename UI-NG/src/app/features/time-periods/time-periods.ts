@@ -41,7 +41,8 @@ export class TimePeriods {
 
   protected readonly timePeriods = this.api.list();
 
-  protected readonly rows = computed(() => this.timePeriods.value()?.data ?? []);
+  // value() throws while the resource is in an error state, so read it only when there is one.
+  protected readonly rows = computed(() => (this.timePeriods.hasValue() ? (this.timePeriods.value()?.data ?? []) : []));
 
   protected readonly error = computed(() => {
     const error = this.timePeriods.error();

@@ -1,21 +1,77 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpTestingController } from '@angular/common/http/testing';
+
+import { appTestProviders, authResponse, envelope } from '../../../../testing/test-providers';
+import { apiUrl } from '../../../core/api/api-response';
+import { toSession } from '../../../core/auth/auth.models';
+import { PERIOD } from '../item';
+import { makeItem } from '../testing-items';
 import { ItemList } from './item-list';
 
 describe('ItemList', () => {
-  let component: ItemList;
   let fixture: ComponentFixture<ItemList>;
+  let http: HttpTestingController;
+  const userId = authResponse().userId;
 
-  beforeEach(async () => {
+  async function create(itemType: number) {
+    sessionStorage.clear();
+    sessionStorage.setItem('fpfl.session', JSON.stringify(toSession(authResponse())));
     await TestBed.configureTestingModule({
       imports: [ItemList],
+      providers: appTestProviders(),
     }).compileComponents();
 
+    http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(ItemList);
-    component = fixture.componentInstance;
+    fixture.componentRef.setInput('itemType', itemType);
+    fixture.detectChanges();
+    TestBed.tick(); // lets httpResource send its request
+  }
+
+  afterEach(() => http.verify());
+
+  const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+  it('lists credits with amount, period, schedule and dates', async () => {
+    await create(1);
+
+    http.expectOne(apiUrl(`/items/${userId}/1`)).flush(
+      envelope([
+        makeItem(PERIOD.biMonthly, { id: 1, name: 'Salary', amount: 2500, biMonthlyDay1: 1, biMonthlyDay2: 15 }),
+        makeItem(PERIOD.oneTime, { id: 2, name: 'Tax Refund', amount: 1234.5, beginDate: '2026-04-15' }),
+      ]),
+    );
     await fixture.whenStable();
+
+    expect(text()).toContain('Credits');
+    expect(text()).toContain('Salary');
+    expect(text()).toContain('$2,500.00');
+    expect(text()).toContain('On the 1st and 15th');
+    expect(text()).toContain('Tax Refund');
+    expect(text()).toContain('$1,234.50');
+    expect(text()).toContain('Apr 15, 2026');
+    expect(text()).toContain('2 items');
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('asks for debits when the route says itemType 2', async () => {
+    await create(2);
+
+    http.expectOne(apiUrl(`/items/${userId}/2`)).flush(envelope([]));
+    await fixture.whenStable();
+
+    expect(text()).toContain('Debits');
+    expect(text()).toContain('No debits yet.');
+  });
+
+  it('shows the API error message and reference', async () => {
+    await create(1);
+
+    http
+      .expectOne(apiUrl(`/items/${userId}/1`))
+      .flush(envelope(null, 403, 'You can only view your own items', 'ref-9'), { status: 403, statusText: 'Forbidden' });
+    await fixture.whenStable();
+
+    expect(text()).toContain('You can only view your own items');
+    expect(text()).toContain('ref-9');
   });
 });

@@ -41,7 +41,8 @@ export class ItemTypes {
 
   protected readonly itemTypes = this.api.list();
 
-  protected readonly rows = computed(() => this.itemTypes.value()?.data ?? []);
+  // value() throws while the resource is in an error state, so read it only when there is one.
+  protected readonly rows = computed(() => (this.itemTypes.hasValue() ? (this.itemTypes.value()?.data ?? []) : []));
 
   protected readonly error = computed(() => {
     const error = this.itemTypes.error();

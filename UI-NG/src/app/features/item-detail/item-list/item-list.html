@@ -1,1 +1,84 @@
-<p>item-list works!</p>
+<section class="page">
+  <header class="page__header">
+    <div>
+      <a class="page__back" routerLink="/">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Home
+      </a>
+      <h1 class="page__title">
+        <span class="items__badge" [class.items__badge--debit]="!isCredit()" aria-hidden="true">
+          <i class="pi" [class.pi-arrow-down-left]="isCredit()" [class.pi-arrow-up-right]="!isCredit()"></i>
+        </span>
+        {{ title() }}
+      </h1>
+      <p class="page__subtitle">{{ subtitle() }}</p>
+    </div>
+
+    <div class="page__actions">
+      <p-button
+        icon="pi pi-refresh"
+        label="Refresh"
+        [outlined]="true"
+        [loading]="items.isLoading()"
+        (onClick)="items.reload()"
+      />
+    </div>
+  </header>
+
+  @if (error(); as err) {
+    <p-message severity="error" class="page__error">
+      {{ err.message }}
+      @if (err.correlationId) {
+        <span class="page__correlation">Reference: {{ err.correlationId }}</span>
+      }
+    </p-message>
+  }
+
+  <div class="page__card">
+    <p-table
+      [value]="rows()"
+      [loading]="items.isLoading()"
+      dataKey="item.id"
+      [stripedRows]="true"
+      [paginator]="rows().length > 10"
+      [rows]="10"
+      sortField="name"
+      [sortOrder]="1"
+      [tableStyle]="{ 'min-width': '44rem' }"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="name">Name <p-sort-icon field="name" /></th>
+          <th pSortableColumn="amount" class="col-amount">Amount <p-sort-icon field="amount" /></th>
+          <th pSortableColumn="period">Period <p-sort-icon field="period" /></th>
+          <th>Schedule</th>
+          <th>Dates</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-row>
+        <tr>
+          <td class="items__name">{{ row.name }}</td>
+          <td class="col-amount items__amount" [class.items__amount--debit]="!isCredit()">
+            {{ row.amount | currency: 'USD' }}
+          </td>
+          <td><p-tag [value]="row.period" severity="secondary" [rounded]="true" /></td>
+          <td>{{ row.schedule }}</td>
+          <td class="items__dates">{{ row.dates }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="5" class="page__empty">
+            {{ items.isLoading() ? 'Loading…' : 'No ' + title().toLowerCase() + ' yet.' }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  @if (rows().length > 0) {
+    <p class="items__count">{{ rows().length }} {{ rows().length === 1 ? 'item' : 'items' }}</p>
+  }
+</section>

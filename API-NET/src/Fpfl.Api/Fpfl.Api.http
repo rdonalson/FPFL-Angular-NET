@@ -197,3 +197,28 @@ Content-Type: application/json
 ### Delete item type (admin)
 DELETE {{Fpfl.Api_HostAddress}}/item-types/97
 Authorization: Bearer {{adminToken}}
+
+# ---------------------------------------------------------------------------
+# Items (signed in). Use the userId from your login response; 1 = credits, 2 = debits.
+# ---------------------------------------------------------------------------
+@userId = paste-userId-guid-here
+
+### My credits
+GET {{Fpfl.Api_HostAddress}}/items/{{userId}}/1
+Authorization: Bearer {{accessToken}}
+
+### My debits
+GET {{Fpfl.Api_HostAddress}}/items/{{userId}}/2
+Authorization: Bearer {{accessToken}}
+
+### Someone else's items -> 403 (unless admin)
+GET {{Fpfl.Api_HostAddress}}/items/00000000-0000-0000-0000-000000000001/1
+Authorization: Bearer {{accessToken}}
+
+### One item (404 if it isn't yours)
+GET {{Fpfl.Api_HostAddress}}/items/1
+Authorization: Bearer {{accessToken}}
+
+### Every item (admin)
+GET {{Fpfl.Api_HostAddress}}/items
+Authorization: Bearer {{adminToken}}

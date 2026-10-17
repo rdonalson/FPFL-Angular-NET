@@ -18,6 +18,8 @@ public sealed class ItemsDbContext(DbContextOptions<ItemsDbContext> options) : D
 
     public DbSet<TimePeriod> TimePeriods => Set<TimePeriod>();
 
+    public DbSet<Item> Items => Set<Item>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(Schema);

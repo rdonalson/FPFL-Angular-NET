@@ -28,6 +28,12 @@ public sealed class AuthMapper
         principal.FindAll(AuthClaims.Role).Select(c => c.Value).ToList(),
         principal.FindFirstValue(AuthClaims.Guest) == "true");
 
+    /// <summary>The users.user_id (GUID that owns the user's items) from the access token.</summary>
+    public Guid GetUserGuid(ClaimsPrincipal principal) =>
+        Guid.TryParse(principal.FindFirstValue(AuthClaims.UserId), out var userId)
+            ? userId
+            : throw new InvalidCredentialsException("Access token is missing the user_id claim");
+
     /// <summary>The numeric users.id from the access token; never taken from the request body.</summary>
     public long GetUserId(ClaimsPrincipal principal)
     {

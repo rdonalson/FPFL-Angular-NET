@@ -1,0 +1,65 @@
+// Page layout comes from ../../item-types/item-types.scss; these are the item-specific touches.
+
+.page__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.page__title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.items__badge {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  color: var(--p-green-700, #15803d);
+  background: var(--p-green-50, #f0fdf4);
+}
+
+.items__badge--debit {
+  color: var(--p-red-700, #b91c1c);
+  background: var(--p-red-50, #fef2f2);
+}
+
+.col-amount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.items__name {
+  font-weight: 600;
+}
+
+.items__amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--p-green-700, #15803d);
+}
+
+.items__amount--debit {
+  color: var(--p-red-700, #b91c1c);
+}
+
+.items__dates {
+  color: var(--fpfl-muted);
+  white-space: nowrap;
+}
+
+.items__count {
+  margin: 0.75rem 0 0;
+  color: var(--fpfl-muted);
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .items__count {
+    padding: 0 0.75rem;
+  }
+}
