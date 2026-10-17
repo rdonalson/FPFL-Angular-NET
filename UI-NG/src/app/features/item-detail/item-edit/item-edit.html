@@ -1,1 +1,175 @@
-<p>item-edit works!</p>
+<section class="page">
+  <header class="page__header">
+    <div>
+      <a class="page__back" [routerLink]="listPath()">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        {{ noun() }}s
+      </a>
+      <h1 class="page__title">{{ title() }}</h1>
+      <p class="page__subtitle">
+        @if (periodLabel(); as label) {
+          {{ label }} {{ noun().toLowerCase() }}
+        } @else {
+          Fill in the details below.
+        }
+      </p>
+    </div>
+  </header>
+
+  @if (loadError(); as err) {
+    <p-message severity="error" class="page__error">
+      {{ err.message }}
+      @if (err.correlationId) {
+        <span class="page__correlation">Reference: {{ err.correlationId }}</span>
+      }
+    </p-message>
+  }
+
+  <form class="page__card item-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <!-- Details -->
+    <fieldset class="item-form__section">
+      <legend class="item-form__legend">Details</legend>
+      <div class="item-form__grid">
+        <div class="item-form__field">
+          <label for="item-name">Name</label>
+          <input pInputText id="item-name" formControlName="name" maxlength="150" placeholder="e.g. Salary" [fluid]="true" />
+        </div>
+        <div class="item-form__field">
+          <label for="item-amount">Amount</label>
+          <p-inputnumber inputId="item-amount" formControlName="amount" mode="currency" currency="USD" locale="en-US" placeholder="$0.00" [fluid]="true" />
+        </div>
+      </div>
+    </fieldset>
+
+    <!-- Schedule -->
+    <fieldset class="item-form__section">
+      <legend class="item-form__legend">Schedule</legend>
+      <div class="item-form__grid">
+        <div class="item-form__field">
+          <label for="item-period">How often</label>
+          <p-select inputId="item-period" formControlName="periodId" [options]="periods" optionLabel="label" optionValue="id" placeholder="Choose a period" [fluid]="true" appendTo="body" />
+        </div>
+
+        @switch (selectedPeriod()) {
+          @case (PERIOD.oneTime) {
+            <div class="item-form__field">
+              <label for="item-begin">Date</label>
+              <p-datepicker inputId="item-begin" formControlName="beginDate" [showIcon]="true" dateFormat="M d, yy" [fluid]="true" appendTo="body" />
+            </div>
+          }
+          @case (PERIOD.weekly) {
+            <div class="item-form__field">
+              <label for="item-weekly">Day of the week</label>
+              <p-select inputId="item-weekly" formControlName="weeklyDow" [options]="weekdays" optionLabel="label" optionValue="value" placeholder="Choose a day" [fluid]="true" appendTo="body" />
+            </div>
+          }
+          @case (PERIOD.everyTwoWeeks) {
+            <div class="item-form__field">
+              <label for="item-biweekly">Day of the week</label>
+              <p-select inputId="item-biweekly" formControlName="everyOtherWeekDow" [options]="weekdays" optionLabel="label" optionValue="value" placeholder="Choose a day" [fluid]="true" appendTo="body" />
+            </div>
+            <div class="item-form__field">
+              <label for="item-begin">First date it happens</label>
+              <p-datepicker inputId="item-begin" formControlName="beginDate" [showIcon]="true" dateFormat="M d, yy" [fluid]="true" appendTo="body" />
+            </div>
+          }
+          @case (PERIOD.biMonthly) {
+            <div class="item-form__field">
+              <label for="item-bm1">First day of the month</label>
+              <p-select inputId="item-bm1" formControlName="biMonthlyDay1" [options]="days" optionLabel="label" optionValue="value" placeholder="Day" [fluid]="true" appendTo="body" />
+            </div>
+            <div class="item-form__field">
+              <label for="item-bm2">Second day of the month</label>
+              <p-select inputId="item-bm2" formControlName="biMonthlyDay2" [options]="days" optionLabel="label" optionValue="value" placeholder="Day" [fluid]="true" appendTo="body" />
+            </div>
+          }
+          @case (PERIOD.monthly) {
+            <div class="item-form__field">
+              <label for="item-monthly">Day of the month</label>
+              <p-select inputId="item-monthly" formControlName="monthlyDom" [options]="days" optionLabel="label" optionValue="value" placeholder="Day" [fluid]="true" appendTo="body" />
+            </div>
+          }
+          @case (PERIOD.quarterly) {
+            @for (quarter of quarters; track quarter.label) {
+              <div class="item-form__field item-form__field--pair">
+                <span class="item-form__label">{{ quarter.label }}</span>
+                <div class="item-form__pair">
+                  <p-select [formControlName]="quarter.month" [options]="months" optionLabel="label" optionValue="value" placeholder="Month" [fluid]="true" appendTo="body" [ariaLabel]="quarter.label + ' month'" />
+                  <p-select [formControlName]="quarter.day" [options]="days" optionLabel="label" optionValue="value" placeholder="Day" [fluid]="true" appendTo="body" [ariaLabel]="quarter.label + ' day'" />
+                </div>
+              </div>
+            }
+          }
+          @case (PERIOD.semiAnnual) {
+            @for (half of halves; track half.label) {
+              <div class="item-form__field item-form__field--pair">
+                <span class="item-form__label">{{ half.label }}</span>
+                <div class="item-form__pair">
+                  <p-select [formControlName]="half.month" [options]="months" optionLabel="label" optionValue="value" placeholder="Month" [fluid]="true" appendTo="body" [ariaLabel]="half.label + ' month'" />
+                  <p-select [formControlName]="half.day" [options]="days" optionLabel="label" optionValue="value" placeholder="Day" [fluid]="true" appendTo="body" [ariaLabel]="half.label + ' day'" />
+                </div>
+              </div>
+            }
+          }
+          @case (PERIOD.annual) {
+            <div class="item-form__field item-form__field--pair">
+              <span class="item-form__label">Date each year</span>
+              <div class="item-form__pair">
+                <p-select formControlName="annualMoy" [options]="months" optionLabel="label" optionValue="value" placeholder="Month" [fluid]="true" appendTo="body" ariaLabel="Month" />
+                <p-select formControlName="annualDom" [options]="days" optionLabel="label" optionValue="value" placeholder="Day" [fluid]="true" appendTo="body" ariaLabel="Day" />
+              </div>
+            </div>
+          }
+          @case (PERIOD.nthWeekday) {
+            <div class="item-form__field item-form__field--pair">
+              <span class="item-form__label">Which weekday of the month</span>
+              <div class="item-form__pair">
+                <p-select formControlName="nthIndex" [options]="nthOptions" optionLabel="label" optionValue="value" placeholder="Which" [fluid]="true" appendTo="body" ariaLabel="Which week" />
+                <p-select formControlName="nthDow" [options]="weekdays" optionLabel="label" optionValue="value" placeholder="Weekday" [fluid]="true" appendTo="body" ariaLabel="Weekday" />
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </fieldset>
+
+    <!-- Time frame (one-time items are a single date, shown above) -->
+    @if (selectedPeriod() !== null && selectedPeriod() !== PERIOD.oneTime) {
+      <fieldset class="item-form__section">
+        <legend class="item-form__legend">Time frame</legend>
+        <div class="item-form__toggle">
+          <p-toggleswitch inputId="item-range" formControlName="dateRangeReq" />
+          <label for="item-range">
+            {{ selectedPeriod() === PERIOD.everyTwoWeeks ? 'Stop on a date' : 'Only between two dates' }}
+          </label>
+        </div>
+
+        @if (dateRange()) {
+          <div class="item-form__grid">
+            @if (selectedPeriod() !== PERIOD.everyTwoWeeks) {
+              <div class="item-form__field">
+                <label for="item-range-begin">Start</label>
+                <p-datepicker inputId="item-range-begin" formControlName="beginDate" [showIcon]="true" dateFormat="M d, yy" [fluid]="true" appendTo="body" />
+              </div>
+            }
+            <div class="item-form__field">
+              <label for="item-range-end">End</label>
+              <p-datepicker inputId="item-range-end" formControlName="endDate" [showIcon]="true" dateFormat="M d, yy" [fluid]="true" appendTo="body" />
+            </div>
+          </div>
+        } @else {
+          <p class="item-form__hint">Repeats with no end date.</p>
+        }
+      </fieldset>
+    }
+
+    @if (problem(); as message) {
+      <p-message severity="error" class="item-form__problem">{{ message }}</p-message>
+    }
+
+    <div class="item-form__actions">
+      <p-button label="Cancel" [text]="true" [routerLink]="listPath()" [disabled]="saving()" />
+      <p-button type="submit" [label]="isEdit() ? 'Save changes' : 'Add ' + noun().toLowerCase()" icon="pi pi-check" [loading]="saving()" />
+    </div>
+  </form>
+</section>

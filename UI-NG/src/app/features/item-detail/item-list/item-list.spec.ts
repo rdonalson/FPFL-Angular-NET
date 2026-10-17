@@ -63,6 +63,41 @@ describe('ItemList', () => {
     expect(text()).toContain('No debits yet.');
   });
 
+  it('links New to the period picker and Edit to the item', async () => {
+    await create(1);
+    http.expectOne(apiUrl(`/items/${userId}/1`)).flush(envelope([makeItem(PERIOD.daily, { id: 3, name: 'Coffee' })]));
+    await fixture.whenStable();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).toContain('New Credit');
+    expect(el.querySelector('[aria-label="Edit Coffee"]')).toBeTruthy();
+  });
+
+  it('deletes an item after confirmation and reloads the list', async () => {
+    await create(2);
+    http.expectOne(apiUrl(`/items/${userId}/2`)).flush(envelope([makeItem(PERIOD.monthly, { id: 4, name: 'Rent', amount: 1500 })]));
+    await fixture.whenStable();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[aria-label="Delete Rent"] button, button[aria-label="Delete Rent"]')!.click();
+    await fixture.whenStable();
+    expect(document.body.textContent).toContain('This can\'t be undone.');
+
+    const confirm = Array.from(document.body.querySelectorAll<HTMLButtonElement>('button')).find(
+      (button) => button.textContent?.trim() === 'Delete',
+    )!;
+    confirm.click();
+
+    const req = http.expectOne(apiUrl('/items/4'));
+    expect(req.request.method).toBe('DELETE');
+    req.flush(envelope(null, 200, 'Item 4 deleted successfully'));
+
+    TestBed.tick();
+    http.expectOne(apiUrl(`/items/${userId}/2`)).flush(envelope([]));
+    await fixture.whenStable();
+
+    expect(text()).toContain('No debits yet.');
+  });
+
   it('shows the API error message and reference', async () => {
     await create(1);
 

@@ -1,0 +1,84 @@
+// Page layout comes from ../../item-types/item-types.scss.
+
+.item-form {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem;
+}
+
+.item-form__section {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.item-form__legend {
+  padding: 0;
+  margin-bottom: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fpfl-muted);
+}
+
+.item-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.item-form__field {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+
+  label,
+  .item-form__label {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+}
+
+.item-form__pair {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 0.5rem;
+}
+
+.item-form__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+
+  label {
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+}
+
+.item-form__hint {
+  margin: 0;
+  color: var(--fpfl-muted);
+  font-size: 0.9rem;
+}
+
+.item-form__problem {
+  display: block;
+}
+
+.item-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--fpfl-border);
+}
+
+@media (max-width: 640px) {
+  .item-form {
+    padding: 1rem 0.75rem;
+  }
+}

@@ -222,3 +222,50 @@ Authorization: Bearer {{accessToken}}
 ### Every item (admin)
 GET {{Fpfl.Api_HostAddress}}/items
 Authorization: Bearer {{adminToken}}
+
+### Create a monthly credit (paid on the 15th)
+POST {{Fpfl.Api_HostAddress}}/items
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Side Gig",
+  "amount": 250,
+  "fkItemType": 1,
+  "fkPeriod": 6,
+  "monthlyDom": 15,
+  "dateRangeReq": false
+}
+
+### Update it: switch to every other Friday starting Nov 6 (other fields are cleared)
+PUT {{Fpfl.Api_HostAddress}}/items/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Side Gig",
+  "amount": 125,
+  "fkItemType": 1,
+  "fkPeriod": 4,
+  "everyOtherWeekDow": 5,
+  "beginDate": "2026-11-06",
+  "dateRangeReq": false
+}
+
+### Validation error -> 400 with the broken rule
+POST {{Fpfl.Api_HostAddress}}/items
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Bad",
+  "amount": 10,
+  "fkItemType": 1,
+  "fkPeriod": 5,
+  "biMonthlyDay1": 15,
+  "biMonthlyDay2": 15
+}
+
+### Delete it
+DELETE {{Fpfl.Api_HostAddress}}/items/1
+Authorization: Bearer {{accessToken}}

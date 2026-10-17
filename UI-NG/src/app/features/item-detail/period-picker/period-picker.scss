@@ -1,0 +1,65 @@
+.periods {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem;
+}
+
+.period {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  height: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--fpfl-surface);
+  box-shadow: var(--fpfl-shadow);
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--p-primary-color, #10b981);
+    transform: translateY(-1px);
+  }
+}
+
+.period__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  color: var(--p-primary-color, #10b981);
+  background: var(--p-primary-50, #ecfdf5);
+}
+
+.period__text {
+  display: grid;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.period__label {
+  font-weight: 600;
+}
+
+.period__example {
+  font-size: 0.85rem;
+  color: var(--fpfl-muted);
+}
+
+.period__chevron {
+  color: var(--fpfl-muted);
+}
+
+@media (max-width: 640px) {
+  .periods {
+    padding: 0 0.75rem;
+  }
+}

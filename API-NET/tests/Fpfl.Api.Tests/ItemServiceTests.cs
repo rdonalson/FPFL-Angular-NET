@@ -105,6 +105,59 @@ public sealed class ItemServiceTests
         Assert.Equal(4, (await _service.ListAllAsync(default)).Count);
     }
 
+    private static Item MonthlyDraft(string name = "Side Gig") => new()
+    {
+        Name = name, Amount = 250, ItemTypeId = Credit, TimePeriodId = 6, MonthlyDom = 15,
+    };
+
+    [Fact]
+    public async Task Create_takes_the_owner_from_the_caller_and_validates()
+    {
+        var draft = MonthlyDraft();
+        draft.UserId = Guest; // whatever the request said is ignored
+
+        var created = await _service.CreateAsync(draft, Rick, default);
+
+        Assert.Equal(Rick, created.UserId);
+        Assert.Equal(5, created.Id);
+        Assert.Equal(15, created.MonthlyDom);
+        await Assert.ThrowsAsync<DomainValidationException>(
+            () => _service.CreateAsync(new Item { Name = "", Amount = 1, ItemTypeId = Credit, TimePeriodId = 2 }, Rick, default));
+    }
+
+    [Fact]
+    public async Task Update_replaces_the_details_but_never_the_owner()
+    {
+        var draft = MonthlyDraft("Rent (new)");
+        draft.UserId = Guest;
+
+        var updated = await _service.UpdateAsync(2, draft, Rick, requesterIsAdmin: false, default);
+
+        Assert.Equal("Rent (new)", updated.Name);
+        Assert.Equal(Rick, updated.UserId);
+        Assert.Equal(Rick, _repo.Items.Single(i => i.Id == 2).UserId);
+    }
+
+    [Fact]
+    public async Task Users_cannot_update_or_delete_someone_elses_item()
+    {
+        await Assert.ThrowsAsync<ItemNotFoundException>(
+            () => _service.UpdateAsync(4, MonthlyDraft(), Rick, requesterIsAdmin: false, default));
+        await Assert.ThrowsAsync<ItemNotFoundException>(
+            () => _service.DeleteAsync(4, Rick, requesterIsAdmin: false, default));
+
+        Assert.Contains(_repo.Items, i => i.Id == 4);
+    }
+
+    [Fact]
+    public async Task Delete_removes_the_item_and_a_second_delete_is_not_found()
+    {
+        await _service.DeleteAsync(2, Rick, requesterIsAdmin: false, default);
+
+        Assert.DoesNotContain(_repo.Items, i => i.Id == 2);
+        await Assert.ThrowsAsync<ItemNotFoundException>(() => _service.DeleteAsync(2, Rick, requesterIsAdmin: false, default));
+    }
+
     private sealed class FakeItemRepository : IItemRepository
     {
         public List<Item> Items { get; } = [];
@@ -121,5 +174,22 @@ public sealed class ItemServiceTests
                 .Where(i => i.UserId == userId && i.ItemTypeId == itemTypeId)
                 .OrderBy(i => i.Name)
                 .ToList());
+
+        public Task<long> AddAsync(Item item, CancellationToken cancellationToken)
+        {
+            item.Id = Items.Max(i => i.Id) + 1;
+            Items.Add(item);
+            return Task.FromResult(item.Id);
+        }
+
+        public Task UpdateAsync(Item item, CancellationToken cancellationToken)
+        {
+            Items.RemoveAll(i => i.Id == item.Id);
+            Items.Add(item);
+            return Task.CompletedTask;
+        }
+
+        public Task<int> DeleteAsync(long id, CancellationToken cancellationToken) =>
+            Task.FromResult(Items.RemoveAll(i => i.Id == id));
     }
 }

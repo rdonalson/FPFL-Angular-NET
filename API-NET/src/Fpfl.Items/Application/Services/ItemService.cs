@@ -1,4 +1,5 @@
 using Fpfl.Common.Exceptions;
+using Fpfl.Items.Domain;
 using Fpfl.Items.Domain.Entities;
 using Fpfl.Items.Domain.Repositories;
 using Fpfl.Items.Domain.Services;
@@ -6,8 +7,9 @@ using Fpfl.Items.Domain.Services;
 namespace Fpfl.Items.Application.Services;
 
 /// <summary>
-///     Read side of API-JDK's ItemServiceImpl, plus ownership checks API-JDK doesn't have:
-///     a user can only read their own items unless they are an admin.
+///     Port of API-JDK's ItemServiceImpl, plus what it lacks: a user can only read or change their own
+///     items (admins can reach all), the owner always comes from the access token, and every save goes
+///     through <see cref="ItemRules" />.
 /// </summary>
 public sealed class ItemService(IItemRepository repository) : IItemService
 {
@@ -30,6 +32,41 @@ public sealed class ItemService(IItemRepository repository) : IItemService
         }
 
         return item;
+    }
+
+    public async Task<Item> CreateAsync(Item draft, Guid ownerUserId, CancellationToken cancellationToken)
+    {
+        draft.Id = 0;
+        draft.UserId = ownerUserId;
+        var item = ItemRules.Normalize(draft);
+
+        var id = await repository.AddAsync(item, cancellationToken);
+
+        // Re-read so the response carries the item type and time period names.
+        return await repository.FindByIdAsync(id, cancellationToken) ?? item;
+    }
+
+    public async Task<Item> UpdateAsync(
+        long id, Item draft, Guid requesterUserId, bool requesterIsAdmin, CancellationToken cancellationToken)
+    {
+        var existing = await GetAsync(id, requesterUserId, requesterIsAdmin, cancellationToken);
+
+        draft.Id = existing.Id;
+        draft.UserId = existing.UserId; // an update never moves an item to another user
+        var item = ItemRules.Normalize(draft);
+
+        await repository.UpdateAsync(item, cancellationToken);
+        return await repository.FindByIdAsync(id, cancellationToken) ?? item;
+    }
+
+    public async Task DeleteAsync(long id, Guid requesterUserId, bool requesterIsAdmin, CancellationToken cancellationToken)
+    {
+        await GetAsync(id, requesterUserId, requesterIsAdmin, cancellationToken);
+
+        if (await repository.DeleteAsync(id, cancellationToken) == 0)
+        {
+            throw new ItemNotFoundException($"Item {id} not found");
+        }
     }
 
     public Task<IReadOnlyList<Item>> ListForUserAsync(

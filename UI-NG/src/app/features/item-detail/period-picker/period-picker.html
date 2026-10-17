@@ -1,0 +1,27 @@
+<section class="page">
+  <header class="page__header">
+    <div>
+      <a class="page__back" [routerLink]="listPath()">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        {{ noun() }}s
+      </a>
+      <h1 class="page__title">New {{ noun() }}</h1>
+      <p class="page__subtitle">How often does it happen?</p>
+    </div>
+  </header>
+
+  <ul class="periods" role="list">
+    @for (period of periods; track period.id) {
+      <li>
+        <a class="period" [routerLink]="[listPath(), 'new', period.id]">
+          <span class="period__icon" aria-hidden="true"><i [class]="period.icon"></i></span>
+          <span class="period__text">
+            <span class="period__label">{{ period.label }}</span>
+            <span class="period__example">{{ period.example }}</span>
+          </span>
+          <i class="pi pi-chevron-right period__chevron" aria-hidden="true"></i>
+        </a>
+      </li>
+    }
+  </ul>
+</section>

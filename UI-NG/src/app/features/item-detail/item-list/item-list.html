@@ -15,6 +15,7 @@
     </div>
 
     <div class="page__actions">
+      <p-button icon="pi pi-plus" [label]="'New ' + noun()" [routerLink]="[listPath(), 'new']" />
       <p-button
         icon="pi pi-refresh"
         label="Refresh"
@@ -44,7 +45,7 @@
       [rows]="10"
       sortField="name"
       [sortOrder]="1"
-      [tableStyle]="{ 'min-width': '44rem' }"
+      [tableStyle]="{ 'min-width': '50rem' }"
     >
       <ng-template #header>
         <tr>
@@ -53,6 +54,7 @@
           <th pSortableColumn="period">Period <p-sort-icon field="period" /></th>
           <th>Schedule</th>
           <th>Dates</th>
+          <th class="col-actions" aria-label="Actions"></th>
         </tr>
       </ng-template>
 
@@ -65,13 +67,30 @@
           <td><p-tag [value]="row.period" severity="secondary" [rounded]="true" /></td>
           <td>{{ row.schedule }}</td>
           <td class="items__dates">{{ row.dates }}</td>
+          <td class="col-actions">
+            <p-button
+              icon="pi pi-pencil"
+              [text]="true"
+              [rounded]="true"
+              [ariaLabel]="'Edit ' + row.name"
+              [routerLink]="[listPath(), row.item.id, 'edit']"
+            />
+            <p-button
+              icon="pi pi-trash"
+              severity="danger"
+              [text]="true"
+              [rounded]="true"
+              [ariaLabel]="'Delete ' + row.name"
+              (onClick)="confirmDelete(row.item)"
+            />
+          </td>
         </tr>
       </ng-template>
 
       <ng-template #emptymessage>
         <tr>
-          <td colspan="5" class="page__empty">
-            {{ items.isLoading() ? 'Loading…' : 'No ' + title().toLowerCase() + ' yet.' }}
+          <td colspan="6" class="page__empty">
+            {{ items.isLoading() ? 'Loading…' : 'No ' + title().toLowerCase() + ' yet. Use “New ' + noun() + '” to add one.' }}
           </td>
         </tr>
       </ng-template>
@@ -82,3 +101,27 @@
     <p class="items__count">{{ rows().length }} {{ rows().length === 1 ? 'item' : 'items' }}</p>
   }
 </section>
+
+<p-dialog
+  [header]="'Delete ' + noun()"
+  [visible]="pendingDelete() !== null"
+  (visibleChange)="$event || cancelDelete()"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: '26rem' }"
+  [breakpoints]="{ '640px': '95vw' }"
+>
+  @if (pendingDelete(); as item) {
+    @if (deleteError(); as message) {
+      <p-message severity="error" class="items__dialog-error">{{ message }}</p-message>
+    }
+    <p>
+      Delete <strong>{{ item.name }}</strong> ({{ item.amount | currency: 'USD' }})? This can't be undone.
+    </p>
+    <div class="items__dialog-actions">
+      <p-button label="Cancel" [text]="true" [disabled]="deleting()" (onClick)="cancelDelete()" />
+      <p-button label="Delete" icon="pi pi-trash" severity="danger" [loading]="deleting()" (onClick)="delete()" />
+    </div>
+  }
+</p-dialog>

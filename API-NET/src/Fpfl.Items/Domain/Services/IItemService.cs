@@ -1,3 +1,4 @@
+using Fpfl.Items.Domain;
 using Fpfl.Items.Domain.Entities;
 
 namespace Fpfl.Items.Domain.Services;
@@ -20,4 +21,16 @@ public interface IItemService
     /// <exception cref="Fpfl.Common.Exceptions.ForbiddenOperationException">Asking for another user's items without being an admin.</exception>
     Task<IReadOnlyList<Item>> ListForUserAsync(
         Guid userId, long itemTypeId, Guid requesterUserId, bool requesterIsAdmin, CancellationToken cancellationToken);
+
+    /// <summary>Creates an item owned by <paramref name="ownerUserId" /> (always the caller, never the request body).</summary>
+    /// <exception cref="Fpfl.Common.Exceptions.DomainValidationException">The item breaks a rule in <see cref="ItemRules" />.</exception>
+    Task<Item> CreateAsync(Item draft, Guid ownerUserId, CancellationToken cancellationToken);
+
+    /// <summary>Replaces an item's details. The owner never changes.</summary>
+    /// <exception cref="Fpfl.Common.Exceptions.ItemNotFoundException">No such item, or it belongs to someone else.</exception>
+    /// <exception cref="Fpfl.Common.Exceptions.DomainValidationException">The item breaks a rule in <see cref="ItemRules" />.</exception>
+    Task<Item> UpdateAsync(long id, Item draft, Guid requesterUserId, bool requesterIsAdmin, CancellationToken cancellationToken);
+
+    /// <exception cref="Fpfl.Common.Exceptions.ItemNotFoundException">No such item, or it belongs to someone else.</exception>
+    Task DeleteAsync(long id, Guid requesterUserId, bool requesterIsAdmin, CancellationToken cancellationToken);
 }
