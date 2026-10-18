@@ -13,7 +13,7 @@ The project is organized into two top‑level applications plus shared infrastru
 
 This repository serves as the **parent project**, containing both applications, the deployment manifests, and their shared development workflow.
 
-> 🚧 **Nearly at parity.** Auth, credits and debits with every recurrence pattern, the initial amount, the forecasted ledger with its chart and **Excel export**, item types, time periods, and the full deployment pipeline are live. Only the admin status page remains to match FPFL-React-Java. See [Project Status](#-project-status).
+> 🚧 **Nearly at parity, and past it.** Auth, credits and debits with every recurrence pattern, the initial amount, the forecasted ledger with its chart and **Excel export**, item types, time periods, and the full deployment pipeline are live. **Debt Paydown**, a feature neither earlier version had, tracks how credit card and other debts get paid down. Only the admin status page remains to match FPFL-React-Java. See [Project Status](#-project-status).
 
 ### 🌐 Live Environment
 
@@ -110,6 +110,7 @@ API‑NET reads and writes the **same `fpfl` schema** as API‑JDK, so both stac
 ### **Domain Entities**
 
 - `Item` — user‑defined financial items with amount, date bounds, and recurrence metadata
+- `Debt` / `DebtAllocation` — Debt Paydown's tracked debts and the credits allocated to them (API‑NET only; created by `API-NET/db/001_debt_paydown.sql`)
 - `ItemType` — credit / debit / initial‑amount classification
 - `TimePeriod` — recurrence periods (one‑time, daily, weekly, bi‑weekly, monthly, quarterly, annual, etc.)
 
@@ -119,7 +120,13 @@ API‑NET reads and writes the **same `fpfl` schema** as API‑JDK, so both stac
 - `Role` / `UserRole` — role assignments (composite key)
 - `RefreshToken` — persisted (hashed) refresh tokens for session renewal
 
-![Entity Relationship Diagram](API-NET/docs/FPFL-ER.png)
+**Items** — items, item types, time periods, and Debt Paydown's debts and allocations:
+
+![Items entity relationship diagram](API-NET/docs/FPFL-ER-Item.png)
+
+**Auth** — users, roles, and refresh tokens:
+
+![Auth entity relationship diagram](API-NET/docs/FPFL-ER-Auth.png)
 
 A full table breakdown is included in the API README.
 
@@ -153,6 +160,18 @@ The original version computed the ledger in a database stored procedure. This re
 
 ---
 
+# **💳 Debt Paydown**
+
+A feature new to this version. Pick a debit you're paying down (a credit card payment, say), enter what's owed and an optional APR, then send a percentage of any credits to it — "30% of every paycheck, 50% of every bonus".
+
+- **Engine** — `PaydownCalculator` in `Fpfl.Display` reuses the recurrence expanders. Starting from the balance on the day it was entered, each occurrence of the debit's own payment and of every allocated credit reduces what's owed; interest (APR ÷ 12) is added at each month end; payments stop at $0 with the last one cut to what's left; and it projects up to 30 years out to find the payoff date. Pure and unit‑tested like the ledger builder.
+- **Main forecast** — allocations appear in the ledger as extra **"Debt Paydown"** debits, so the running balance stays truthful (the debit's own payment is already a debit and isn't counted twice).
+- **Rules** — only your own debits and credits; a debit is tracked once; and no credit can be allocated more than 100% across all your debts (*"Paycheck is already 70% allocated to other debts; at most 30% is left"*).
+- **UI** — a **Debt Paydown** setup page (cards per debt, an editor with live dollars‑per‑occurrence and "% left" hints), plus **Paydown chart** and **Paydown ledger** tabs on Display and a **Debt Paydown** sheet in the Excel export with the same expandable rows.
+- **Storage** — two new tables, `fpfl.debts` and `fpfl.debt_allocations`, created by [`API-NET/db/001_debt_paydown.sql`](API-NET/db/001_debt_paydown.sql) (the shared schema is owned by API‑JDK, so new tables come from scripts, not EF migrations).
+
+---
+
 # **🚧 Project Status**
 
 Ultimately this version will match every feature of [FPFL-React-Java](https://github.com/rdonalson/FPFL-React-Java).
@@ -169,6 +188,7 @@ Ultimately this version will match every feature of [FPFL-React-Java](https://gi
 | Initial amount (created automatically) | ✅ | ✅ |
 | Forecasted ledger + chart | ✅ | ✅ |
 | Ledger download to Excel (expandable rows) | ✅ | — |
+| **Debt Paydown** — tracked debts, allocations, paydown chart / ledger / Excel sheet *(new)* | ✅ | ✅ |
 | Admin status page | 🔜 | ✅ (`/health`) |
 | Docker, AKS, GitHub Actions CI/CD | ✅ | ✅ |
 
@@ -234,6 +254,7 @@ A guided tour of the codebase. All links are relative to the repository root.
 - [TimePeriods](UI-NG/src/app/features/time-periods/time-periods.ts) · [time-periods-api.ts](UI-NG/src/app/features/time-periods/data-access/time-periods-api.ts)
 - **Credits & debits** — [ItemList](UI-NG/src/app/features/item-detail/item-list/item-list.ts) · [PeriodPicker](UI-NG/src/app/features/item-detail/period-picker/period-picker.ts) · [ItemEdit](UI-NG/src/app/features/item-detail/item-edit/item-edit.ts) · [item-form.ts](UI-NG/src/app/features/item-detail/item-form.ts) · [schedule.ts](UI-NG/src/app/features/item-detail/schedule.ts) · [item-api.ts](UI-NG/src/app/features/item-detail/data-access/item-api.ts)
 - **Initial amount** — [InitialAmountPage](UI-NG/src/app/features/item-detail/initial-amount/initial-amount.ts) · [initial-amount-api.ts](UI-NG/src/app/features/item-detail/data-access/initial-amount-api.ts)
+- **Debt Paydown** — [DebtPaydownPage](UI-NG/src/app/features/debt-paydown/debt-paydown.ts) · [debt-paydown.models.ts](UI-NG/src/app/features/debt-paydown/debt-paydown.models.ts) · [debt-api.ts](UI-NG/src/app/features/debt-paydown/data-access/debt-api.ts) · [PaydownChart](UI-NG/src/app/features/display/paydown/paydown-chart.ts) · [PaydownLedger](UI-NG/src/app/features/display/paydown/paydown-ledger.ts) · [paydown.models.ts](UI-NG/src/app/features/display/paydown/paydown.models.ts)
 - **Display (forecast)** — [DisplayPage](UI-NG/src/app/features/display/display.ts) · [display.models.ts](UI-NG/src/app/features/display/display.models.ts) · [LedgerChart](UI-NG/src/app/features/display/chart/chart.ts) · [chart-data.ts](UI-NG/src/app/features/display/chart/chart-data.ts) · [Ledger](UI-NG/src/app/features/display/ledger/ledger.ts) · [ledger-export.ts](UI-NG/src/app/features/display/export/ledger-export.ts) · [display-api.ts](UI-NG/src/app/features/display/data-access/display-api.ts)
 
 ### Testing
@@ -259,6 +280,7 @@ A guided tour of the codebase. All links are relative to the repository root.
 - [AuthController](API-NET/src/Fpfl.Api/Controllers/AuthController.cs)
 - [UserRolesController](API-NET/src/Fpfl.Api/Controllers/UserRolesController.cs)
 - [ItemsController](API-NET/src/Fpfl.Api/Controllers/ItemsController.cs)
+- [DebtsController](API-NET/src/Fpfl.Api/Controllers/DebtsController.cs)
 - [InitialAmountController](API-NET/src/Fpfl.Api/Controllers/InitialAmountController.cs)
 - [DisplayController](API-NET/src/Fpfl.Api/Controllers/DisplayController.cs)
 - [ItemTypesController](API-NET/src/Fpfl.Api/Controllers/ItemTypesController.cs)
@@ -269,7 +291,8 @@ A guided tour of the codebase. All links are relative to the repository root.
 
 - **Auth** — [AuthRequests](API-NET/src/Fpfl.Api/Dtos/Auth/AuthRequests.cs) · [AuthResponse](API-NET/src/Fpfl.Api/Dtos/Auth/AuthResponse.cs) · [AuthMapper](API-NET/src/Fpfl.Api/Mappers/AuthMapper.cs)
 - **Item** — [ItemRequest](API-NET/src/Fpfl.Api/Dtos/Items/ItemRequest.cs) · [ItemResponse](API-NET/src/Fpfl.Api/Dtos/Items/ItemResponse.cs) · [InitialAmountDtos](API-NET/src/Fpfl.Api/Dtos/InitialAmounts/InitialAmountDtos.cs) · [ItemMapper](API-NET/src/Fpfl.Api/Mappers/ItemMapper.cs)
-- **Display** — [LedgerDtos](API-NET/src/Fpfl.Api/Dtos/Display/LedgerDtos.cs) · [DisplayMapper](API-NET/src/Fpfl.Api/Mappers/DisplayMapper.cs)
+- **Display** — [LedgerDtos](API-NET/src/Fpfl.Api/Dtos/Display/LedgerDtos.cs) · [PaydownDtos](API-NET/src/Fpfl.Api/Dtos/Display/PaydownDtos.cs) · [DisplayMapper](API-NET/src/Fpfl.Api/Mappers/DisplayMapper.cs)
+- **Debt** — [DebtDtos](API-NET/src/Fpfl.Api/Dtos/Debts/DebtDtos.cs) · [DebtMapper](API-NET/src/Fpfl.Api/Mappers/DebtMapper.cs)
 - **ItemType** — [ItemTypeRequests](API-NET/src/Fpfl.Api/Dtos/ItemTypes/ItemTypeRequests.cs) · [ItemTypeResponse](API-NET/src/Fpfl.Api/Dtos/ItemTypes/ItemTypeResponse.cs) · [ItemTypeMapper](API-NET/src/Fpfl.Api/Mappers/ItemTypeMapper.cs)
 - **TimePeriod** — [TimePeriodRequests](API-NET/src/Fpfl.Api/Dtos/TimePeriods/TimePeriodRequests.cs) · [TimePeriodResponse](API-NET/src/Fpfl.Api/Dtos/TimePeriods/TimePeriodResponse.cs) · [TimePeriodMapper](API-NET/src/Fpfl.Api/Mappers/TimePeriodMapper.cs)
 - **UserRoles** — [ReplaceUserRolesRequest](API-NET/src/Fpfl.Api/Dtos/UserRoles/ReplaceUserRolesRequest.cs)
@@ -284,14 +307,15 @@ A guided tour of the codebase. All links are relative to the repository root.
 
 ### Fpfl.Items
 
-- **Domain** — [Item](API-NET/src/Fpfl.Items/Domain/Entities/Item.cs) · [ItemRules](API-NET/src/Fpfl.Items/Domain/ItemRules.cs) · [IItemService](API-NET/src/Fpfl.Items/Domain/Services/IItemService.cs) · [IInitialAmountService](API-NET/src/Fpfl.Items/Domain/Services/IInitialAmountService.cs) · [IItemRepository](API-NET/src/Fpfl.Items/Domain/Repositories/IItemRepository.cs) · [ItemType](API-NET/src/Fpfl.Items/Domain/Entities/ItemType.cs) · [TimePeriod](API-NET/src/Fpfl.Items/Domain/Entities/TimePeriod.cs) · [IItemTypeService](API-NET/src/Fpfl.Items/Domain/Services/IItemTypeService.cs) · [ITimePeriodService](API-NET/src/Fpfl.Items/Domain/Services/ITimePeriodService.cs) · [IItemTypeRepository](API-NET/src/Fpfl.Items/Domain/Repositories/IItemTypeRepository.cs) · [ITimePeriodRepository](API-NET/src/Fpfl.Items/Domain/Repositories/ITimePeriodRepository.cs)
-- **Application** — [ItemService](API-NET/src/Fpfl.Items/Application/Services/ItemService.cs) · [InitialAmountService](API-NET/src/Fpfl.Items/Application/Services/InitialAmountService.cs) · [ItemTypeService](API-NET/src/Fpfl.Items/Application/Services/ItemTypeService.cs) · [TimePeriodService](API-NET/src/Fpfl.Items/Application/Services/TimePeriodService.cs)
-- **Infrastructure** — [ItemsDbContext](API-NET/src/Fpfl.Items/Infrastructure/Persistence/ItemsDbContext.cs) · [ItemRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/ItemRepository.cs) · [ItemTypeRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/ItemTypeRepository.cs) · [TimePeriodRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/TimePeriodRepository.cs) · [ItemsDatabaseHealthCheck](API-NET/src/Fpfl.Items/Infrastructure/Health/ItemsDatabaseHealthCheck.cs)
+- **Domain** — [Item](API-NET/src/Fpfl.Items/Domain/Entities/Item.cs) · [ItemRules](API-NET/src/Fpfl.Items/Domain/ItemRules.cs) · [Debt](API-NET/src/Fpfl.Items/Domain/Entities/Debt.cs) · [DebtAllocation](API-NET/src/Fpfl.Items/Domain/Entities/DebtAllocation.cs) · [DebtRules](API-NET/src/Fpfl.Items/Domain/DebtRules.cs) · [IDebtService](API-NET/src/Fpfl.Items/Domain/Services/IDebtService.cs) · [IItemService](API-NET/src/Fpfl.Items/Domain/Services/IItemService.cs) · [IInitialAmountService](API-NET/src/Fpfl.Items/Domain/Services/IInitialAmountService.cs) · [IItemRepository](API-NET/src/Fpfl.Items/Domain/Repositories/IItemRepository.cs) · [ItemType](API-NET/src/Fpfl.Items/Domain/Entities/ItemType.cs) · [TimePeriod](API-NET/src/Fpfl.Items/Domain/Entities/TimePeriod.cs) · [IItemTypeService](API-NET/src/Fpfl.Items/Domain/Services/IItemTypeService.cs) · [ITimePeriodService](API-NET/src/Fpfl.Items/Domain/Services/ITimePeriodService.cs) · [IItemTypeRepository](API-NET/src/Fpfl.Items/Domain/Repositories/IItemTypeRepository.cs) · [ITimePeriodRepository](API-NET/src/Fpfl.Items/Domain/Repositories/ITimePeriodRepository.cs)
+- **Application** — [DebtService](API-NET/src/Fpfl.Items/Application/Services/DebtService.cs) · [ItemService](API-NET/src/Fpfl.Items/Application/Services/ItemService.cs) · [InitialAmountService](API-NET/src/Fpfl.Items/Application/Services/InitialAmountService.cs) · [ItemTypeService](API-NET/src/Fpfl.Items/Application/Services/ItemTypeService.cs) · [TimePeriodService](API-NET/src/Fpfl.Items/Application/Services/TimePeriodService.cs)
+- **Infrastructure** — [ItemsDbContext](API-NET/src/Fpfl.Items/Infrastructure/Persistence/ItemsDbContext.cs) · [ItemRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/ItemRepository.cs) · [DebtRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/DebtRepository.cs) · [001_debt_paydown.sql](API-NET/db/001_debt_paydown.sql) · [ItemTypeRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/ItemTypeRepository.cs) · [TimePeriodRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/TimePeriodRepository.cs) · [ItemsDatabaseHealthCheck](API-NET/src/Fpfl.Items/Infrastructure/Health/ItemsDatabaseHealthCheck.cs)
 
 ### Fpfl.Display
 
 - **Engine** — [LedgerBuilder](API-NET/src/Fpfl.Display/Domain/LedgerBuilder.cs) · [RecurrenceEngine](API-NET/src/Fpfl.Display/Domain/Recurrence/RecurrenceEngine.cs) · [IRecurrenceExpander](API-NET/src/Fpfl.Display/Domain/Recurrence/IRecurrenceExpander.cs) · [RecurrenceWindow](API-NET/src/Fpfl.Display/Domain/Recurrence/RecurrenceWindow.cs) · [CalendarMath](API-NET/src/Fpfl.Display/Domain/Recurrence/CalendarMath.cs)
 - **Expanders** — [OneTime](API-NET/src/Fpfl.Display/Domain/Recurrence/OneTimeExpander.cs) · [Daily](API-NET/src/Fpfl.Display/Domain/Recurrence/DailyExpander.cs) · [Weekly](API-NET/src/Fpfl.Display/Domain/Recurrence/WeeklyExpander.cs) · [EveryTwoWeeks](API-NET/src/Fpfl.Display/Domain/Recurrence/EveryTwoWeeksExpander.cs) · [BiMonthly](API-NET/src/Fpfl.Display/Domain/Recurrence/BiMonthlyExpander.cs) · [Monthly](API-NET/src/Fpfl.Display/Domain/Recurrence/MonthlyExpander.cs) · [Quarterly](API-NET/src/Fpfl.Display/Domain/Recurrence/QuarterlyExpander.cs) · [SemiAnnual](API-NET/src/Fpfl.Display/Domain/Recurrence/SemiAnnualExpander.cs) · [Annual](API-NET/src/Fpfl.Display/Domain/Recurrence/AnnualExpander.cs) · [NthWeekday](API-NET/src/Fpfl.Display/Domain/Recurrence/NthWeekdayExpander.cs)
+- **Paydown** — [PaydownCalculator](API-NET/src/Fpfl.Display/Domain/Paydown/PaydownCalculator.cs) · [PaydownModels](API-NET/src/Fpfl.Display/Domain/Paydown/PaydownModels.cs)
 - **Application** — [LedgerReadoutService](API-NET/src/Fpfl.Display/Application/Services/LedgerReadoutService.cs)
 
 ### Fpfl.Auth
@@ -308,6 +332,7 @@ A guided tour of the codebase. All links are relative to the repository root.
 
 ### Tests
 
+- [PaydownCalculatorTests](API-NET/tests/Fpfl.Api.Tests/PaydownCalculatorTests.cs) · [DebtServiceTests](API-NET/tests/Fpfl.Api.Tests/DebtServiceTests.cs) · [InMemoryRepositories](API-NET/tests/Fpfl.Api.Tests/InMemoryRepositories.cs)
 - [RecurrenceEngineTests](API-NET/tests/Fpfl.Api.Tests/RecurrenceEngineTests.cs) · [LedgerBuilderTests](API-NET/tests/Fpfl.Api.Tests/LedgerBuilderTests.cs) · [DisplayMapperTests](API-NET/tests/Fpfl.Api.Tests/DisplayMapperTests.cs) · [ItemRulesTests](API-NET/tests/Fpfl.Api.Tests/ItemRulesTests.cs) · [ItemServiceTests](API-NET/tests/Fpfl.Api.Tests/ItemServiceTests.cs) · [InitialAmountServiceTests](API-NET/tests/Fpfl.Api.Tests/InitialAmountServiceTests.cs)
 - [AuthServiceTests](API-NET/tests/Fpfl.Api.Tests/AuthServiceTests.cs) · [UserRolesServiceTests](API-NET/tests/Fpfl.Api.Tests/UserRolesServiceTests.cs) · [ItemTypeServiceTests](API-NET/tests/Fpfl.Api.Tests/ItemTypeServiceTests.cs) · [TimePeriodServiceTests](API-NET/tests/Fpfl.Api.Tests/TimePeriodServiceTests.cs) · [SanitizerTests](API-NET/tests/Fpfl.Api.Tests/SanitizerTests.cs)
 
@@ -487,7 +512,7 @@ In practice, neither build is run by hand for production — pushing to `master`
 
 - The UI and API are developed independently but run together during local development.
 - The API enforces bounded‑context boundaries through separate projects; the UI consumes only the public REST contracts and the `ApiResponse<T>` envelope.
-- PostgreSQL is required for full functionality; the schema is shared with API‑JDK, so don't run EF migrations against it.
+- PostgreSQL is required for full functionality; the schema is shared with API‑JDK, so don't run EF migrations against it. Tables API‑NET adds (Debt Paydown) come from numbered scripts in [`API-NET/db`](API-NET/db) — run each once against every database (local and Azure) **before** deploying the code that uses it.
 - The UI's API URL is **build‑time** — changing it means rebuilding the image (which is why the workflow passes it as a Docker build arg).
 - PrimeNG 22 uses a license key (the free PrimeUI Community license); it lives in `environment.ts` and ships in the bundle by design.
 - Path filters in the workflows mean a change confined to one application only redeploys that application.

@@ -41,6 +41,6 @@ public sealed record LedgerItemResponse(
     DateOnly OccurrenceDate,
     long FkItemType,
     string? ItemType,
-    string? Period,
+    [property: LenientText] string? Period, // paydown entries carry "25% of Paycheck" here
     [property: LenientText] string? Name,
     decimal Amount);

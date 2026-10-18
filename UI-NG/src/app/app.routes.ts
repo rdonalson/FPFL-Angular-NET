@@ -24,6 +24,12 @@ export const routes: Routes = [
   ...itemRoutes('credits', ITEM_TYPE.credit, 'Credit'),
   ...itemRoutes('debits', ITEM_TYPE.debit, 'Debit'),
   {
+    path: 'debt-paydown',
+    title: 'Debt Paydown | FPFL',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/debt-paydown/debt-paydown').then((m) => m.DebtPaydownPage),
+  },
+  {
     path: 'display',
     title: 'Display | FPFL',
     canActivate: [authGuard],

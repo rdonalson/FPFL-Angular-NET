@@ -1,4 +1,5 @@
 import { LedgerDay, LedgerItem } from './display.models';
+import { DebtPaydown } from './paydown/paydown.models';
 
 /** A ledger day for specs; amounts are derived from `items` unless given. */
 export function makeDay(rollupKey: number, wDate: string, runningTotal: number, items: Partial<LedgerItem>[] = []): LedgerDay {
@@ -39,4 +40,30 @@ export function sampleLedger(): LedgerDay[] {
     ]),
     makeDay(3, '2026-10-19', 1300),
   ];
+}
+
+/**
+ * Chase Visa over the same three days as sampleLedger(): $1,000 owed, a $200 scheduled payment and
+ * 25% of the $2,500 paycheck ($625) on the 18th, leaving $175 (paid off the next month).
+ */
+export function samplePaydown(overrides: Partial<DebtPaydown> = {}): DebtPaydown {
+  return {
+    debtId: 1,
+    itemId: 10,
+    name: 'Chase Visa',
+    apr: 0,
+    enteredBalance: 1000,
+    balanceDate: '2026-10-16',
+    startingBalance: 1000,
+    endingBalance: 175,
+    totalPaid: 825,
+    totalInterest: 0,
+    payoffDate: '2026-11-18',
+    balances: [1000, 175, 175],
+    events: [
+      { date: '2026-10-18', kind: 'payment', sourceItemId: 10, sourceName: 'Chase Visa', percent: null, amount: -200, balanceAfter: 800 },
+      { date: '2026-10-18', kind: 'allocation', sourceItemId: 20, sourceName: 'Paycheck', percent: 25, amount: -625, balanceAfter: 175 },
+    ],
+    ...overrides,
+  };
 }

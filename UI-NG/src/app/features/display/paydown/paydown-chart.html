@@ -1,0 +1,43 @@
+<div class="paydown-cards">
+  @for (debt of debts(); track debt.debtId; let i = $index) {
+    <article class="paydown-card" [style.--debt-color]="color(i)">
+      <h3 class="paydown-card__name"><span class="paydown-card__swatch" aria-hidden="true"></span>{{ debt.name }}</h3>
+      <dl class="paydown-card__figures">
+        <div>
+          <dt>Owed</dt>
+          <dd>{{ debt.startingBalance | currency: 'USD' }} → <strong>{{ debt.endingBalance | currency: 'USD' }}</strong></dd>
+        </div>
+        <div>
+          <dt>Paid</dt>
+          <dd class="paydown-card__paid">{{ debt.totalPaid | currency: 'USD' }}</dd>
+        </div>
+        @if (debt.totalInterest > 0) {
+          <div>
+            <dt>Interest</dt>
+            <dd class="paydown-card__interest">{{ debt.totalInterest | currency: 'USD' }}</dd>
+          </div>
+        }
+      </dl>
+      <p class="paydown-card__payoff" [class.paydown-card__payoff--never]="status(debt, windowEnd()) === 'never'">
+        @switch (status(debt, windowEnd())) {
+          @case ('paid') {
+            <i class="pi pi-check-circle" aria-hidden="true"></i> Paid off {{ formatDate(debt.payoffDate) }}
+          }
+          @case ('later') {
+            <i class="pi pi-calendar" aria-hidden="true"></i> Paid off {{ formatDate(debt.payoffDate) }} (after this range)
+          }
+          @default {
+            <i class="pi pi-exclamation-triangle" aria-hidden="true"></i> Not paid off within 30 years at this rate
+          }
+        }
+      </p>
+    </article>
+  }
+</div>
+
+<figure class="paydown-chart">
+  <figcaption class="paydown-chart__title">Balance owed</figcaption>
+  <p-chart type="line" [data]="chart().data" [options]="chart().options" height="320px" ariaLabel="Balance owed on each debt by day" />
+</figure>
+
+<p class="paydown-note">Hover the chart for each day's balances. The Paydown ledger tab lists every payment.</p>

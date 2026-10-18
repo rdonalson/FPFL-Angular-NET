@@ -1,6 +1,9 @@
 using System.Text.Json;
 
 using Fpfl.Api.Mappers;
+using Fpfl.Common.Sanitization;
+using Fpfl.Display.Domain.Paydown;
+using Microsoft.Extensions.Logging.Abstractions;
 using Fpfl.Display.Domain;
 using Fpfl.Display.Domain.Recurrence;
 using Fpfl.Items.Domain;
@@ -46,5 +49,25 @@ public sealed class DisplayMapperTests
         Assert.Equal("Daily", item.GetProperty("period").GetString());
         Assert.Equal("Coffee", item.GetProperty("name").GetString());
         Assert.Equal(-4.5m, item.GetProperty("amount").GetDecimal());
+    }
+
+    [Fact]
+    public void A_ledger_with_debt_paydown_entries_passes_the_response_sanitizer()
+    {
+        var paycheck = new Item
+        {
+            Id = 20, ItemTypeId = ItemRules.Credit, TimePeriodId = ItemRules.OneTime, Name = "Paycheck", Amount = 2000,
+            BeginDate = new DateOnly(2026, 10, 30), DateRangeReq = true,
+        };
+        var adjustment = new LedgerAdjustment
+        {
+            Date = new DateOnly(2026, 10, 30), ItemId = 10, Name = "Chase Visa paydown", Detail = "12.5% of Paycheck", Amount = -250,
+        };
+        var days = LedgerBuilder.Build([paycheck], new DateWindow(new DateOnly(2026, 10, 30), new DateOnly(2026, 10, 30)), [adjustment]);
+        var response = new DisplayMapper().ToResponse(days);
+
+        new Sanitizer(NullLogger<Sanitizer>.Instance).Sanitize(response); // threw "Invalid characters in string" on the %
+
+        Assert.Equal("12.5% of Paycheck", response[0].Items[^1].Period);
     }
 }
