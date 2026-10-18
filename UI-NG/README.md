@@ -7,7 +7,7 @@ It replaces the original version's NgModule/NgRx front end, keeping the same pro
 
 Live at <https://ui-ng.ledger-finance.com> · API at <https://api-net.ledger-finance.com>
 
-> 🚧 **Work in progress.** UI-NG is being built up to full feature parity with UI-TSX. See [Project Status](#-project-status) for what's done and what's next.
+> 🚧 **Nearly at parity.** Everything in UI-TSX is here — credits and debits, the initial amount, and the forecast with its chart and ledger — plus an **Export to Excel** UI-TSX doesn't have. Only the admin status page remains. See [Project Status](#-project-status).
 
 ---
 
@@ -18,6 +18,8 @@ Live at <https://ui-ng.ledger-finance.com> · API at <https://api-net.ledger-fin
 | **Framework** | Angular 22 + TypeScript 6 — standalone components, **zoneless** change detection, `OnPush` by default |
 | **Build tool** | Angular CLI with the esbuild‑based `@angular/build:application` builder |
 | **UI components** | PrimeNG 22 · PrimeIcons 8 |
+| **Charts** | Chart.js 4 through PrimeNG's `p-chart` |
+| **Excel export** | ExcelJS 4, lazy‑loaded on first export |
 | **Theming** | `@primeuix/themes` **Aura** preset (dark mode ready via an `.app-dark` class) · SCSS with CSS custom properties |
 | **State** | Angular **signals** (`signal`, `computed`, `effect`) — no NgRx store |
 | **Server state** | **`httpResource`** for reads (loading / value / error as signals), `HttpClient` + RxJS for writes |
@@ -52,8 +54,8 @@ UI-NG/
  │    │    │    ├── home/        # Galleria landing page
  │    │    │    ├── item-types/  # list + admin add / edit / delete
  │    │    │    ├── time-periods/# list + admin add / edit / delete
- │    │    │    ├── item-detail/ # items + initial amount (scaffolded)
- │    │    │    ├── display/     # ledger + chart (scaffolded)
+ │    │    │    ├── item-detail/ # credits & debits (list, period picker, edit) + initial amount
+ │    │    │    ├── display/     # forecast: date range, summary, chart, ledger, Excel export
  │    │    │    ├── admin/       # status page (scaffolded)
  │    │    │    └── docs/        # docs page (scaffolded)
  │    │    ├── app.config.ts     # Providers (replaces AppModule)
@@ -128,9 +130,15 @@ Features read data with **`httpResource`** inside a small `data-access` service 
 | `/` | Public | Home — Galleria slideshow, overview, guide PDF, sign‑in options |
 | `/item-types` | Authenticated | Item types list · **admin**: add, edit (name and id), delete |
 | `/time-periods` | Authenticated | Time periods list · **admin**: add, edit (name and id), delete |
+| `/initial-amount` | Authenticated | Starting balance — view and edit inline |
+| `/credits` · `/debits` | Authenticated | Your credits / debits — filter, sort, edit, delete |
+| `/credits/new` · `/debits/new` | Authenticated | Pick a time period for a new item |
+| `/credits/new/:periodId` · `/debits/new/:periodId` | Authenticated | New item for that period |
+| `/credits/:id/edit` · `/debits/:id/edit` | Authenticated | Edit an item |
+| `/display` | Authenticated | The forecast — summary, chart, ledger, Excel export |
 | `**` | Public | Not found |
 
-Every route is lazy‑loaded with `loadComponent`. Items, initial amount, the forecasted ledger and chart, and the admin status page are scaffolded under `features/` and will be routed as their API endpoints are ported.
+Every route is lazy‑loaded with `loadComponent`, and route `data` / params reach components as inputs (`withComponentInputBinding`) — the credit and debit pages are one set of components told which item type they show. The admin status page is scaffolded under `features/admin` and will be routed next.
 
 ---
 
@@ -146,6 +154,18 @@ Implemented today:
 
 - **`home`** — PrimeNG Galleria auto‑cycling through landing photos, the project summary, the Financial Planner Guide PDF, and guest / sign‑in calls to action
 - **`item-types`** and **`time-periods`** — PrimeNG tables with refresh, error messages with correlation reference, and an admin dialog for add / edit / delete whose name validation matches the API's strict sanitizer
+- **Sidebar** ([`core/layout/sidebar`](src/app/core/layout/sidebar)) — a ☰ drawer from the top bar; the menu is a small data file ([`menu.ts`](src/app/core/layout/sidebar/menu.ts)) with a role filter, so the Admin section only appears for `ROLE_ADMIN`
+- **`item-detail`** — credits and debits:
+  - **List** — sortable, paged table with a filter box, a readable schedule for each item ("Every other Friday", "On the 1st and 15th"), and delete with confirmation
+  - **Period picker** — ten cards, one per time period, each with an example
+  - **Edit** — one reactive form for all ten periods; choosing a period shows only its fields, and the same rules as the API's `ItemRules` run before saving
+  - **Initial amount** — the starting balance as a card with inline edit; the API creates $0.00 automatically, so there's no "create" step
+- **`display`** — the forecast:
+  - **Date range** with quick ranges (30 days → 5 years); runs on arrival with today + 90 days
+  - **Summary tiles** — starting, credits, debits, lowest (with date) and ending balance, plus a warning when the balance drops below $0
+  - **Chart** — the balance over time, and each day's credits above zero / debits below; colors checked for color‑blind readers
+  - **Ledger** — one row per day with expandable items, an "Only days with activity" switch, and expand / collapse all
+  - **Export to Excel** — a port of the original Angular app's export: the same ledger as a workbook, each day's items in a collapsed outline group that Excel's +/– buttons open, with real dates and accounting‑formatted amounts
 
 ---
 
@@ -162,10 +182,11 @@ The goal is the same feature set as [UI-TSX](https://github.com/rdonalson/FPFL-R
 | Item types — list + admin add / edit / delete | ✅ Done |
 | Time periods — list + admin add / edit / delete | ✅ Done |
 | Docker image, AKS deployment, CI/CD | ✅ Done |
-| Sidebar menu with role‑filtered admin section | 🔜 Planned |
-| Credit / debit items with per‑period add / edit pages | 🔜 Planned |
-| Initial amount | 🔜 Planned |
-| Forecasted ledger table + chart with date‑range selection | 🔜 Planned |
+| Sidebar menu with role‑filtered admin section | ✅ Done |
+| Credit / debit items with per‑period add / edit pages | ✅ Done |
+| Initial amount | ✅ Done |
+| Forecasted ledger table + chart with date‑range selection | ✅ Done |
+| Ledger download to Excel with expandable rows | ✅ Done (not in UI-TSX) |
 | Admin status page (UI + API health) | 🔜 Planned |
 | Client error forwarding to `/client-logs` | 🔜 Planned |
 
@@ -193,7 +214,7 @@ The dev server runs on **<http://localhost:4200>** and calls the API at `http://
 
 ## 🧪 Testing
 
-Unit tests run on **Vitest** through Angular's `@angular/build:unit-test` builder. The suite covers the auth service, the auth and error interceptors, guards, the shell, layout, and feature pages, using the real interceptors against `HttpTestingController`.
+Unit tests run on **Vitest** through Angular's `@angular/build:unit-test` builder. The suite covers the auth service, the auth and error interceptors, guards, the shell, layout, sidebar menu, and every feature page, using the real interceptors against `HttpTestingController`. Logic lives in plain functions where it can — item form validation, schedule descriptions, ledger summaries, chart data, and the Excel workbook builder — so most of it is tested without rendering anything.
 
 Shared setup lives in [`src/testing/test-providers.ts`](src/testing/test-providers.ts) (`appTestProviders()`, `envelope()`, `authResponse()`).
 
@@ -236,6 +257,9 @@ The pod runs on the dedicated `netpool` node pool behind the nginx ingress at `u
 - Use PrimeNG template references (`#header`, `#body`, `#item`, `#emptymessage`) rather than `pTemplate`
 - Keep component styles within the `anyComponentStyle` budget in `angular.json`; shared styles belong in `styles.scss`
 - Never remove or hide PrimeNG's license check — the key belongs in `environment.ts`
+- `httpResource.value()` throws while the resource is in an error state — read it behind `hasValue()`
+- jsdom has no `ResizeObserver` or canvas; specs that render PrimeNG tabs or charts stub them (see [`display.spec.ts`](src/app/features/display/display.spec.ts))
+- Heavy, rarely used libraries are loaded with `import()` at the point of use (ExcelJS), keeping the initial bundle small
 
 ---
 

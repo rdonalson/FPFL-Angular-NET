@@ -13,7 +13,7 @@ The project is organized into two top‑level applications plus shared infrastru
 
 This repository serves as the **parent project**, containing both applications, the deployment manifests, and their shared development workflow.
 
-> 🚧 **Work in progress.** The goal is full feature parity with FPFL-React-Java. Auth, item types, time periods, and the full deployment pipeline are live; items, initial amount, and the forecasted ledger are being ported next. See [Project Status](#-project-status).
+> 🚧 **Nearly at parity.** Auth, credits and debits with every recurrence pattern, the initial amount, the forecasted ledger with its chart and **Excel export**, item types, time periods, and the full deployment pipeline are live. Only the admin status page remains to match FPFL-React-Java. See [Project Status](#-project-status).
 
 ### 🌐 Live Environment
 
@@ -66,6 +66,7 @@ The FPFL system is designed as a **modular, maintainable, enterprise‑grade ful
 - Functional **HTTP interceptors** (loading, error normalization, auth + silent refresh) and functional **route guards**
 - JWT session handling with refresh‑token rotation, one‑click **guest login**, and a session‑expiring warning dialog
 - **Vitest** unit tests through Angular's `@angular/build:unit-test` runner
+- **Chart.js** (through PrimeNG's chart) for the forecast and **ExcelJS** for the ledger download, loaded only when used
 - Organized as `core/` (api, auth, http, layout, system) and lazy‑loaded `features/`
 
 ### **Backend (API‑NET)**
@@ -76,8 +77,8 @@ The FPFL system is designed as a **modular, maintainable, enterprise‑grade ful
 | Project | Mirrors (API‑JDK) | Role |
 | ------- | ----------------- | ---- |
 | `Fpfl.Api` | `module-api` | REST controllers, DTOs, mappers, response envelope, global exception handling, OpenAPI, health |
-| `Fpfl.Items` | `module-items-bc` | Domain logic & persistence for item types and time periods (items next) |
-| `Fpfl.Display` | `module-display-bc` | Ledger readout and recurrence expanders — being ported from Java |
+| `Fpfl.Items` | `module-items-bc` | Domain logic & persistence for items (credits / debits), the initial amount, item types and time periods |
+| `Fpfl.Display` | `module-display-bc` | Forecast ledger: recurrence expanders and the running‑balance ledger builder |
 | `Fpfl.Auth` | `module-auth` | Users, roles, JWT issue/validation, refresh tokens, BCrypt hashing |
 | `Fpfl.Common` | `module-common-bc` | Domain exceptions and the sanitizer |
 
@@ -124,24 +125,31 @@ A full table breakdown is included in the API README.
 
 ---
 
-# **📈 Forecasted Ledger Engine** *(in progress)*
+# **📈 Forecasted Ledger Engine**
 
-The original version computed the ledger in a database stored procedure. This rebuild moves it into the `Fpfl.Display` project as a **testable business‑layer engine**, ported from API‑JDK's recurrence expanders:
+The original version computed the ledger in a database stored procedure. This rebuild moves it into the `Fpfl.Display` project as a **pure, unit‑tested business‑layer engine**, ported from API‑JDK's recurrence expanders — one expander per time period:
 
 | Expander | Pattern |
 | -------- | ------- |
-| One‑time | Single‑date item |
+| One‑time | Once, on the begin date |
 | Daily | Every day in range |
 | Weekly | Weekly on a chosen weekday |
-| Bi‑weekly | Every other week |
-| Monthly | Monthly on a chosen day |
-| Bi‑monthly | Two days per month |
-| Quarterly | Quarterly |
-| Semi‑annual | Twice yearly |
-| Annual | Yearly |
-| Nth weekday | "Nth weekday of the month" patterns |
+| Every two weeks | Every other week, anchored on the begin date |
+| Bi‑monthly | Two days per month (e.g. the 15th and the last day) |
+| Monthly | Monthly on a chosen day (the 31st becomes each month's last day) |
+| Quarterly | Four month/day pairs a year |
+| Semi‑annual | Two month/day pairs a year |
+| Annual | Yearly (Feb 29 falls on Feb 28 outside leap years) |
+| Nth weekday | 1st–4th or last weekday of the month (e.g. the 2nd Tuesday) |
 
-A ledger readout service will compose the expanded occurrences with the user's initial amount and return the running‑balance ledger the UI renders as a table and a chart.
+`LedgerBuilder` turns the user's items into one row per day — credits, debits, net, and a running balance that starts from the **initial amount** — with each day's items nested inside. An item's own date range narrows when it can occur. `POST /display/ledger` returns that ledger; the UI shows it as summary tiles, a balance chart, a credits‑and‑debits chart, and an expandable ledger table, and downloads it as an Excel workbook.
+
+### Improvements over the Java engine
+
+- **Sunday works** — weekdays are stored as 0 = Sunday, which Java's `DayOfWeek.of()` rejected; .NET's `DayOfWeek` uses the same numbering
+- **Every‑two‑weeks dates stay put** — counted from the item's begin date instead of the ledger's start date, so paydays don't shift with the chosen range
+- **Exact cents** — sums use `decimal`, so long runs don't drift (`0.1 + 0.2` stays `0.30`)
+- **Owner‑only** — a user can only build their own ledger (Java trusted the `userId` in the body), and a request is capped at 10 years
 
 ---
 
@@ -156,9 +164,11 @@ Ultimately this version will match every feature of [FPFL-React-Java](https://gi
 | Client error logging (`/client-logs`) | 🔜 | ✅ |
 | Item types — CRUD | ✅ | ✅ |
 | Time periods — CRUD | ✅ | ✅ |
-| Items — credits / debits with recurrence | 🔜 | 🔜 |
-| Initial amount | 🔜 | 🔜 |
-| Forecasted ledger + chart | 🔜 | 🔜 |
+| Sidebar menu with role‑filtered admin section | ✅ | — |
+| Items — credits / debits with recurrence | ✅ | ✅ |
+| Initial amount (created automatically) | ✅ | ✅ |
+| Forecasted ledger + chart | ✅ | ✅ |
+| Ledger download to Excel (expandable rows) | ✅ | — |
 | Admin status page | 🔜 | ✅ (`/health`) |
 | Docker, AKS, GitHub Actions CI/CD | ✅ | ✅ |
 
@@ -201,7 +211,7 @@ A guided tour of the codebase. All links are relative to the repository root.
 - [app.config.ts](UI-NG/src/app/app.config.ts) — providers, interceptors, PrimeNG theme, app initializer
 - [app.routes.ts](UI-NG/src/app/app.routes.ts) — lazy `loadComponent` routes
 - [app.ts](UI-NG/src/app/app.ts) · [app.html](UI-NG/src/app/app.html)
-- [Topbar](UI-NG/src/app/core/layout/topbar/topbar.ts) · [Footer](UI-NG/src/app/core/layout/footer/footer.ts)
+- [Topbar](UI-NG/src/app/core/layout/topbar/topbar.ts) · [Sidebar](UI-NG/src/app/core/layout/sidebar/sidebar.ts) · [menu.ts](UI-NG/src/app/core/layout/sidebar/menu.ts) · [Footer](UI-NG/src/app/core/layout/footer/footer.ts)
 
 ### Authentication & Session
 
@@ -222,11 +232,15 @@ A guided tour of the codebase. All links are relative to the repository root.
 - [Home](UI-NG/src/app/features/home/home.ts) — PrimeNG Galleria landing page
 - [ItemTypes](UI-NG/src/app/features/item-types/item-types.ts) · [item-types-api.ts](UI-NG/src/app/features/item-types/data-access/item-types-api.ts)
 - [TimePeriods](UI-NG/src/app/features/time-periods/time-periods.ts) · [time-periods-api.ts](UI-NG/src/app/features/time-periods/data-access/time-periods-api.ts)
+- **Credits & debits** — [ItemList](UI-NG/src/app/features/item-detail/item-list/item-list.ts) · [PeriodPicker](UI-NG/src/app/features/item-detail/period-picker/period-picker.ts) · [ItemEdit](UI-NG/src/app/features/item-detail/item-edit/item-edit.ts) · [item-form.ts](UI-NG/src/app/features/item-detail/item-form.ts) · [schedule.ts](UI-NG/src/app/features/item-detail/schedule.ts) · [item-api.ts](UI-NG/src/app/features/item-detail/data-access/item-api.ts)
+- **Initial amount** — [InitialAmountPage](UI-NG/src/app/features/item-detail/initial-amount/initial-amount.ts) · [initial-amount-api.ts](UI-NG/src/app/features/item-detail/data-access/initial-amount-api.ts)
+- **Display (forecast)** — [DisplayPage](UI-NG/src/app/features/display/display.ts) · [display.models.ts](UI-NG/src/app/features/display/display.models.ts) · [LedgerChart](UI-NG/src/app/features/display/chart/chart.ts) · [chart-data.ts](UI-NG/src/app/features/display/chart/chart-data.ts) · [Ledger](UI-NG/src/app/features/display/ledger/ledger.ts) · [ledger-export.ts](UI-NG/src/app/features/display/export/ledger-export.ts) · [display-api.ts](UI-NG/src/app/features/display/data-access/display-api.ts)
 
 ### Testing
 
 - [test-providers.ts](UI-NG/src/testing/test-providers.ts) — shared TestBed providers and envelope helpers
 - [auth.spec.ts](UI-NG/src/app/core/auth/auth.spec.ts) · [auth-interceptor.spec.ts](UI-NG/src/app/core/http/auth-interceptor.spec.ts) · [item-types.spec.ts](UI-NG/src/app/features/item-types/item-types.spec.ts) · [time-periods.spec.ts](UI-NG/src/app/features/time-periods/time-periods.spec.ts)
+- [item-list.spec.ts](UI-NG/src/app/features/item-detail/item-list/item-list.spec.ts) · [item-edit.spec.ts](UI-NG/src/app/features/item-detail/item-edit/item-edit.spec.ts) · [schedule.spec.ts](UI-NG/src/app/features/item-detail/schedule.spec.ts) · [display.spec.ts](UI-NG/src/app/features/display/display.spec.ts) · [ledger.spec.ts](UI-NG/src/app/features/display/ledger/ledger.spec.ts) · [ledger-export.spec.ts](UI-NG/src/app/features/display/export/ledger-export.spec.ts)
 
 ---
 
@@ -244,6 +258,9 @@ A guided tour of the codebase. All links are relative to the repository root.
 
 - [AuthController](API-NET/src/Fpfl.Api/Controllers/AuthController.cs)
 - [UserRolesController](API-NET/src/Fpfl.Api/Controllers/UserRolesController.cs)
+- [ItemsController](API-NET/src/Fpfl.Api/Controllers/ItemsController.cs)
+- [InitialAmountController](API-NET/src/Fpfl.Api/Controllers/InitialAmountController.cs)
+- [DisplayController](API-NET/src/Fpfl.Api/Controllers/DisplayController.cs)
 - [ItemTypesController](API-NET/src/Fpfl.Api/Controllers/ItemTypesController.cs)
 - [TimePeriodsController](API-NET/src/Fpfl.Api/Controllers/TimePeriodsController.cs)
 - [ClientLogsController](API-NET/src/Fpfl.Api/Controllers/ClientLogsController.cs)
@@ -251,6 +268,8 @@ A guided tour of the codebase. All links are relative to the repository root.
 #### DTOs & Mappers
 
 - **Auth** — [AuthRequests](API-NET/src/Fpfl.Api/Dtos/Auth/AuthRequests.cs) · [AuthResponse](API-NET/src/Fpfl.Api/Dtos/Auth/AuthResponse.cs) · [AuthMapper](API-NET/src/Fpfl.Api/Mappers/AuthMapper.cs)
+- **Item** — [ItemRequest](API-NET/src/Fpfl.Api/Dtos/Items/ItemRequest.cs) · [ItemResponse](API-NET/src/Fpfl.Api/Dtos/Items/ItemResponse.cs) · [InitialAmountDtos](API-NET/src/Fpfl.Api/Dtos/InitialAmounts/InitialAmountDtos.cs) · [ItemMapper](API-NET/src/Fpfl.Api/Mappers/ItemMapper.cs)
+- **Display** — [LedgerDtos](API-NET/src/Fpfl.Api/Dtos/Display/LedgerDtos.cs) · [DisplayMapper](API-NET/src/Fpfl.Api/Mappers/DisplayMapper.cs)
 - **ItemType** — [ItemTypeRequests](API-NET/src/Fpfl.Api/Dtos/ItemTypes/ItemTypeRequests.cs) · [ItemTypeResponse](API-NET/src/Fpfl.Api/Dtos/ItemTypes/ItemTypeResponse.cs) · [ItemTypeMapper](API-NET/src/Fpfl.Api/Mappers/ItemTypeMapper.cs)
 - **TimePeriod** — [TimePeriodRequests](API-NET/src/Fpfl.Api/Dtos/TimePeriods/TimePeriodRequests.cs) · [TimePeriodResponse](API-NET/src/Fpfl.Api/Dtos/TimePeriods/TimePeriodResponse.cs) · [TimePeriodMapper](API-NET/src/Fpfl.Api/Mappers/TimePeriodMapper.cs)
 - **UserRoles** — [ReplaceUserRolesRequest](API-NET/src/Fpfl.Api/Dtos/UserRoles/ReplaceUserRolesRequest.cs)
@@ -265,9 +284,15 @@ A guided tour of the codebase. All links are relative to the repository root.
 
 ### Fpfl.Items
 
-- **Domain** — [ItemType](API-NET/src/Fpfl.Items/Domain/Entities/ItemType.cs) · [TimePeriod](API-NET/src/Fpfl.Items/Domain/Entities/TimePeriod.cs) · [IItemTypeService](API-NET/src/Fpfl.Items/Domain/Services/IItemTypeService.cs) · [ITimePeriodService](API-NET/src/Fpfl.Items/Domain/Services/ITimePeriodService.cs) · [IItemTypeRepository](API-NET/src/Fpfl.Items/Domain/Repositories/IItemTypeRepository.cs) · [ITimePeriodRepository](API-NET/src/Fpfl.Items/Domain/Repositories/ITimePeriodRepository.cs)
-- **Application** — [ItemTypeService](API-NET/src/Fpfl.Items/Application/Services/ItemTypeService.cs) · [TimePeriodService](API-NET/src/Fpfl.Items/Application/Services/TimePeriodService.cs)
-- **Infrastructure** — [ItemsDbContext](API-NET/src/Fpfl.Items/Infrastructure/Persistence/ItemsDbContext.cs) · [ItemTypeRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/ItemTypeRepository.cs) · [TimePeriodRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/TimePeriodRepository.cs) · [ItemsDatabaseHealthCheck](API-NET/src/Fpfl.Items/Infrastructure/Health/ItemsDatabaseHealthCheck.cs)
+- **Domain** — [Item](API-NET/src/Fpfl.Items/Domain/Entities/Item.cs) · [ItemRules](API-NET/src/Fpfl.Items/Domain/ItemRules.cs) · [IItemService](API-NET/src/Fpfl.Items/Domain/Services/IItemService.cs) · [IInitialAmountService](API-NET/src/Fpfl.Items/Domain/Services/IInitialAmountService.cs) · [IItemRepository](API-NET/src/Fpfl.Items/Domain/Repositories/IItemRepository.cs) · [ItemType](API-NET/src/Fpfl.Items/Domain/Entities/ItemType.cs) · [TimePeriod](API-NET/src/Fpfl.Items/Domain/Entities/TimePeriod.cs) · [IItemTypeService](API-NET/src/Fpfl.Items/Domain/Services/IItemTypeService.cs) · [ITimePeriodService](API-NET/src/Fpfl.Items/Domain/Services/ITimePeriodService.cs) · [IItemTypeRepository](API-NET/src/Fpfl.Items/Domain/Repositories/IItemTypeRepository.cs) · [ITimePeriodRepository](API-NET/src/Fpfl.Items/Domain/Repositories/ITimePeriodRepository.cs)
+- **Application** — [ItemService](API-NET/src/Fpfl.Items/Application/Services/ItemService.cs) · [InitialAmountService](API-NET/src/Fpfl.Items/Application/Services/InitialAmountService.cs) · [ItemTypeService](API-NET/src/Fpfl.Items/Application/Services/ItemTypeService.cs) · [TimePeriodService](API-NET/src/Fpfl.Items/Application/Services/TimePeriodService.cs)
+- **Infrastructure** — [ItemsDbContext](API-NET/src/Fpfl.Items/Infrastructure/Persistence/ItemsDbContext.cs) · [ItemRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/ItemRepository.cs) · [ItemTypeRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/ItemTypeRepository.cs) · [TimePeriodRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/TimePeriodRepository.cs) · [ItemsDatabaseHealthCheck](API-NET/src/Fpfl.Items/Infrastructure/Health/ItemsDatabaseHealthCheck.cs)
+
+### Fpfl.Display
+
+- **Engine** — [LedgerBuilder](API-NET/src/Fpfl.Display/Domain/LedgerBuilder.cs) · [RecurrenceEngine](API-NET/src/Fpfl.Display/Domain/Recurrence/RecurrenceEngine.cs) · [IRecurrenceExpander](API-NET/src/Fpfl.Display/Domain/Recurrence/IRecurrenceExpander.cs) · [RecurrenceWindow](API-NET/src/Fpfl.Display/Domain/Recurrence/RecurrenceWindow.cs) · [CalendarMath](API-NET/src/Fpfl.Display/Domain/Recurrence/CalendarMath.cs)
+- **Expanders** — [OneTime](API-NET/src/Fpfl.Display/Domain/Recurrence/OneTimeExpander.cs) · [Daily](API-NET/src/Fpfl.Display/Domain/Recurrence/DailyExpander.cs) · [Weekly](API-NET/src/Fpfl.Display/Domain/Recurrence/WeeklyExpander.cs) · [EveryTwoWeeks](API-NET/src/Fpfl.Display/Domain/Recurrence/EveryTwoWeeksExpander.cs) · [BiMonthly](API-NET/src/Fpfl.Display/Domain/Recurrence/BiMonthlyExpander.cs) · [Monthly](API-NET/src/Fpfl.Display/Domain/Recurrence/MonthlyExpander.cs) · [Quarterly](API-NET/src/Fpfl.Display/Domain/Recurrence/QuarterlyExpander.cs) · [SemiAnnual](API-NET/src/Fpfl.Display/Domain/Recurrence/SemiAnnualExpander.cs) · [Annual](API-NET/src/Fpfl.Display/Domain/Recurrence/AnnualExpander.cs) · [NthWeekday](API-NET/src/Fpfl.Display/Domain/Recurrence/NthWeekdayExpander.cs)
+- **Application** — [LedgerReadoutService](API-NET/src/Fpfl.Display/Application/Services/LedgerReadoutService.cs)
 
 ### Fpfl.Auth
 
@@ -283,6 +308,7 @@ A guided tour of the codebase. All links are relative to the repository root.
 
 ### Tests
 
+- [RecurrenceEngineTests](API-NET/tests/Fpfl.Api.Tests/RecurrenceEngineTests.cs) · [LedgerBuilderTests](API-NET/tests/Fpfl.Api.Tests/LedgerBuilderTests.cs) · [DisplayMapperTests](API-NET/tests/Fpfl.Api.Tests/DisplayMapperTests.cs) · [ItemRulesTests](API-NET/tests/Fpfl.Api.Tests/ItemRulesTests.cs) · [ItemServiceTests](API-NET/tests/Fpfl.Api.Tests/ItemServiceTests.cs) · [InitialAmountServiceTests](API-NET/tests/Fpfl.Api.Tests/InitialAmountServiceTests.cs)
 - [AuthServiceTests](API-NET/tests/Fpfl.Api.Tests/AuthServiceTests.cs) · [UserRolesServiceTests](API-NET/tests/Fpfl.Api.Tests/UserRolesServiceTests.cs) · [ItemTypeServiceTests](API-NET/tests/Fpfl.Api.Tests/ItemTypeServiceTests.cs) · [TimePeriodServiceTests](API-NET/tests/Fpfl.Api.Tests/TimePeriodServiceTests.cs) · [SanitizerTests](API-NET/tests/Fpfl.Api.Tests/SanitizerTests.cs)
 
 ---
@@ -465,7 +491,7 @@ In practice, neither build is run by hand for production — pushing to `master`
 - The UI's API URL is **build‑time** — changing it means rebuilding the image (which is why the workflow passes it as a Docker build arg).
 - PrimeNG 22 uses a license key (the free PrimeUI Community license); it lives in `environment.ts` and ships in the bundle by design.
 - Path filters in the workflows mean a change confined to one application only redeploys that application.
-- `UI-NG/src/app/features` also contains scaffolded, not‑yet‑routed folders (items, initial amount, ledger display, admin status, docs) for the features still being ported.
+- `UI-NG/src/app/features` also contains scaffolded, not‑yet‑routed folders (admin status, docs) for the last features still being ported.
 
 ---
 

@@ -9,14 +9,14 @@ A clean, enterprise‑grade, modular .NET platform built with **.NET 10**, **ASP
 
 It replaces the original version's .NET Core 3.1 layered API, bringing over API‑JDK's response envelope, centralized error handling, sanitizers, and JWT auth with refresh‑token rotation.
 
-> 🚧 **Work in progress.** API‑NET is being built up to full feature parity with API‑JDK. See [Project Status](#-project-status).
+> ✅ **At parity with API‑JDK.** Auth, items, the initial amount, and the forecast ledger are all ported — with ownership checks, exact‑cent math, and recurrence fixes API‑JDK lacks. See [Project Status](#-project-status).
 
 ---
 
 ## Overview
 
 **Purpose**
-Provide a modular backend API that stores, manages, and projects user financial planning items (recurring payments, incomes, and scheduled events). **Fpfl.Api** exposes the REST endpoints and is the single runnable entrypoint; authentication, domain logic, projections, and persistence live in separate bounded‑context projects.
+Provide a modular backend API that stores, manages, and projects user financial planning items (recurring payments, incomes, and scheduled events) into a day‑by‑day forecast ledger. **Fpfl.Api** exposes the REST endpoints and is the single runnable entrypoint; authentication, domain logic, projections, and persistence live in separate bounded‑context projects.
 
 **Key technologies**
 .NET 10 · ASP.NET Core (controllers) · Entity Framework Core 10 + Npgsql · JWT bearer (`Microsoft.IdentityModel.JsonWebTokens`) · BCrypt.Net‑Next · `Microsoft.AspNetCore.OpenApi` + Swagger UI · ASP.NET Core rate limiting & health checks · xUnit · PostgreSQL
@@ -46,8 +46,8 @@ API-NET/
  ├── src/
  │    ├── Fpfl.Api/        # REST API, controllers, DTOs, mappers, envelope, error handling, app bootstrap
  │    ├── Fpfl.Auth/       # Authentication and authorization domain
- │    ├── Fpfl.Items/      # Domain + persistence for item types, time periods (items next)
- │    ├── Fpfl.Display/    # Ledger readout and recurrence expansion (being ported)
+ │    ├── Fpfl.Items/      # Domain + persistence for items, initial amount, item types, time periods
+ │    ├── Fpfl.Display/    # Forecast ledger: recurrence expanders + ledger builder
  │    └── Fpfl.Common/     # Shared exceptions and sanitization
  ├── tests/
  │    └── Fpfl.Api.Tests/  # xUnit tests
@@ -57,7 +57,7 @@ API-NET/
  └── Fpfl.slnx             # Solution
 ```
 
-Inside each bounded context the folders follow the same layering: `Domain/` (entities, repository and service interfaces) → `Application/` (services) → `Infrastructure/` (EF Core `DbContext`, configurations, repositories, health checks), plus a `DependencyInjection.cs` that registers the context with one call (`AddFpflItems`, `AddFpflAuth`, `AddFpflCommon`).
+Inside each bounded context the folders follow the same layering: `Domain/` (entities, repository and service interfaces) → `Application/` (services) → `Infrastructure/` (EF Core `DbContext`, configurations, repositories, health checks), plus a `DependencyInjection.cs` that registers the context with one call (`AddFpflItems`, `AddFpflDisplay`, `AddFpflAuth`, `AddFpflCommon`).
 
 ---
 
@@ -72,7 +72,9 @@ Inside each bounded context the folders follow the same layering: `Domain/` (ent
 - `InvalidModelStateResponseFactory` returns validation failures in the same envelope; `AuthEnvelopeEvents` does the same for JWT 401/403s
 - Owns the composition root: CORS, authentication/authorization, rate limiting, health checks, static landing page
 
-**Controllers:** `AuthController`, `UserRolesController`, `ItemTypesController`, `TimePeriodsController`, `ClientLogsController`
+**Controllers:** `AuthController`, `UserRolesController`, `ItemsController`, `InitialAmountController`, `DisplayController`, `ItemTypesController`, `TimePeriodsController`, `ClientLogsController`
+
+`AuthController`'s register also creates the new user's $0.00 initial amount (best effort — a failure there never fails the sign‑up).
 
 ### **Fpfl.Auth** (mirrors `module-auth`)
 
@@ -86,7 +88,10 @@ Inside each bounded context the folders follow the same layering: `Domain/` (ent
 
 ### **Fpfl.Items** (mirrors `module-items-bc`)
 
-- Owns the domain model and invariants for `ItemType` and `TimePeriod` (`Item` next)
+- Owns the domain model and invariants for `Item`, `ItemType`, and `TimePeriod`
+- `ItemRules` — every rule an item must meet in one place (instead of ten UI forms, as in UI‑TSX): name 1–150 characters, amount above 0 and rounded to cents, credit or debit only, and the right fields for its time period (real month/day pairs, weekdays 0–6, nth index 1–4 or −1). It returns a clean copy with only that period's fields set, because the ledger reads exactly that set
+- `ItemService` — a user reads and changes only their own items (someone else's answers 404 so ids can't be probed; admins reach all); the owner always comes from the access token, never the body
+- `InitialAmountService` — one starting balance per user (item type 3), created at $0.00 on registration or on first read, so the GET never 404s; amounts must be $0 or more
 - Ports‑and‑adapters split: domain `I*Repository` / `I*Service` interfaces, application services, EF Core repositories
 - Repositories translate PostgreSQL errors into domain exceptions — unique violations → `DuplicateItemException` (409), foreign‑key violations → `DomainValidationException` (400), anything else → `RepositoryException` (500)
 - Supports changing a reference row's **id** as well as its name, refusing the change while items still use it
@@ -94,8 +99,10 @@ Inside each bounded context the folders follow the same layering: `Domain/` (ent
 
 ### **Fpfl.Display** (mirrors `module-display-bc`)
 
-- Will expand each item's recurrence metadata into dated occurrences — one expander per pattern (one‑time, daily, weekly, bi‑weekly, monthly, bi‑monthly, quarterly, semi‑annual, annual, nth‑weekday) — and compose them with the user's initial amount into a running‑balance ledger
-- Replaces the original version's database stored procedure with testable application code; currently an empty project referencing `Fpfl.Items` and `Fpfl.Common`
+- Ten `IRecurrenceExpander`s, one per time period (one‑time, daily, weekly, every two weeks, bi‑monthly, monthly, quarterly, semi‑annual, annual, nth weekday), turn an item into its occurrence dates; `RecurrenceEngine` routes each item to its expander once, and `RecurrenceWindow` narrows the dates to the item's own date range
+- `LedgerBuilder` is pure (no database, no clock): one row per day with credit and debit sums, net, and a running balance starting from the initial amount, with that day's entries nested — sums are `decimal` so cents stay exact
+- `LedgerReadoutService` loads the user's items, enforces ownership and a 10‑year cap, and hands them to the builder
+- Replaces the original version's database stored procedure with tested application code, and fixes three API‑JDK bugs on the way: Sunday items threw (`DayOfWeek.of(0)`), every‑two‑weeks dates shifted with the ledger's start date, and any user's ledger could be requested by id
 
 ### **Fpfl.Common** (mirrors `module-common-bc`)
 
@@ -151,6 +158,13 @@ Errors carry `"data": null` and a `correlationId` that matches the server log en
 | `POST /auth/logout` | Public | Revoke a refresh token |
 | `POST /auth/change-password` | Signed in (not guest) | Change password; signs out other devices |
 | `GET /auth/me` | Signed in | Who the access token belongs to |
+| `GET /items` | **Admin** | Every item |
+| `GET /items/{id}` | Signed in | One of your items (someone else's → 404) |
+| `GET /items/{userId}/{itemType}` | Signed in | Your credits (`1`) or debits (`2`) |
+| `POST /items` · `PUT /items/{id}` · `DELETE /items/{id}` | Signed in | Create / update / delete your item (validated by `ItemRules`) |
+| `GET /initial-amount/{userId}` | Signed in | Your starting balance — created at $0.00 if missing |
+| `POST /initial-amount` · `PUT /initial-amount/{id}` | Signed in | Create / change your starting balance |
+| `POST /display/ledger` | Signed in | The forecast: one row per day for `ledgerStartDate`–`ledgerEndDate` (≤ 10 years) |
 | `GET /item-types` · `GET /item-types/{id}` | Public | List / get item types |
 | `POST /item-types` · `PUT /item-types/{id}` · `DELETE /item-types/{id}` | **Admin** | Create / rename or change id / delete |
 | `GET /time-periods` · `GET /time-periods/{id}` | Public | List / get time periods |
@@ -163,6 +177,19 @@ Errors carry `"data": null` and a `correlationId` that matches the server log en
 
 `PUT /item-types/{id}` and `PUT /time-periods/{id}` accept an optional `id` in the body: omit it to rename (as API‑JDK does), or send a different value to change the id.
 
+The ledger request and response keep API‑JDK's shape, so UI‑TSX's types work unchanged (`userId` is optional and defaults to the caller; naming someone else needs the admin role):
+
+```json
+// POST /display/ledger
+{ "ledgerStartDate": "2026-10-17", "ledgerEndDate": "2027-01-15", "includeGrouping": false }
+
+// one day of the response's data[]
+{ "rollupKey": 2, "year": 2026, "wDate": "2026-10-18",
+  "creditSummary": 2500, "debitSummary": -2200, "net": 300, "runningTotal": 1300,
+  "items": [ { "itemKey": 1, "itemId": 12, "occurrenceDate": "2026-10-18", "fkItemType": 1,
+               "itemType": "Credit", "period": "Every Two Weeks", "name": "Paycheck", "amount": 2500 } ] }
+```
+
 ---
 
 # 🗄️ PostgreSQL Database Structure
@@ -173,9 +200,9 @@ API‑NET connects to the **same PostgreSQL database and `fpfl` schema as API‑
 
 ## **📌 Tables Overview**
 
-### **items** *(mapped when the Items port lands)*
+### **items**
 
-Stores all user‑defined financial items, including scheduling metadata. The recurrence columns are mutually exclusive — only the set matching the item's `fk_time_period` is populated, and the ledger reads exactly that set when expanding occurrences.
+Stores all user‑defined financial items — credits, debits, and each user's initial amount (item type 3) — including scheduling metadata. Mapped by `ItemConfiguration`. The recurrence columns are mutually exclusive — only the set matching the item's `fk_time_period` is populated, and the ledger reads exactly that set when expanding occurrences.
 
 | **Column** | **Description** |
 | ---------- | --------------- |
@@ -185,13 +212,13 @@ Stores all user‑defined financial items, including scheduling metadata. The re
 | **fk_item_type** | Foreign key → `item_types.id` |
 | **fk_time_period** | Foreign key → `time_periods.id` |
 | **begin_date** / **end_date** | Date bounds |
-| **weekly_dow** / **every_other_week_dow** | Weekly and bi‑weekly day of week |
+| **weekly_dow** / **every_other_week_dow** | Weekly and every‑two‑weeks day of week (0 = Sunday … 6 = Saturday) |
 | **bi_monthly_day_1** / **bi_monthly_day_2** | Bi‑monthly days |
 | **monthly_dom** | Monthly day of month |
 | **quarterly_1..4_month** / **quarterly_1..4_day** | Quarterly dates |
 | **semi_annual_1..2_month** / **semi_annual_1..2_day** | Semi‑annual dates |
 | **annual_moy** / **annual_dom** | Annual month and day |
-| **nth_dow** / **nth_index** | Nth‑weekday pattern |
+| **nth_dow** / **nth_index** | Nth‑weekday pattern (index 1–4, or −1 for last) |
 | **date_range_req** | Whether a date range is required |
 
 ---
@@ -361,6 +388,11 @@ dotnet test
 - [`UserRolesServiceTests`](tests/Fpfl.Api.Tests/UserRolesServiceTests.cs) — add / remove / replace roles, self‑lockout guard
 - [`ItemTypeServiceTests`](tests/Fpfl.Api.Tests/ItemTypeServiceTests.cs) · [`TimePeriodServiceTests`](tests/Fpfl.Api.Tests/TimePeriodServiceTests.cs) — validation, duplicates, rename and id changes, delete
 - [`SanitizerTests`](tests/Fpfl.Api.Tests/SanitizerTests.cs) — strict / lenient / URI rules, nested objects, opt‑outs
+- [`ItemRulesTests`](tests/Fpfl.Api.Tests/ItemRulesTests.cs) — every period's required fields, real dates, rounding, ranges
+- [`ItemServiceTests`](tests/Fpfl.Api.Tests/ItemServiceTests.cs) · [`InitialAmountServiceTests`](tests/Fpfl.Api.Tests/InitialAmountServiceTests.cs) — ownership, owner from the token, auto‑created initial amount
+- [`RecurrenceEngineTests`](tests/Fpfl.Api.Tests/RecurrenceEngineTests.cs) — each period's dates, month‑end and leap‑year clamping, Sunday, every‑two‑weeks anchoring, item date ranges
+- [`LedgerBuilderTests`](tests/Fpfl.Api.Tests/LedgerBuilderTests.cs) — running balance, day ordering, exact cents, ownership and range limits
+- [`DisplayMapperTests`](tests/Fpfl.Api.Tests/DisplayMapperTests.cs) — the ledger JSON matches API‑JDK's shape field by field
 
 ---
 
@@ -378,9 +410,9 @@ The goal is the same feature set as [API‑JDK](https://github.com/rdonalson/FPF
 | Time periods — CRUD with id changes | ✅ Done |
 | Health checks, Swagger UI, landing page | ✅ Done |
 | Docker image, AKS deployment, CI/CD with tests | ✅ Done |
-| Items (credits / debits with recurrence) | 🔜 Planned |
-| Initial amount | 🔜 Planned |
-| Ledger readout + recurrence expanders (`Fpfl.Display`) | 🔜 Planned |
+| Items (credits / debits with recurrence) | ✅ Done |
+| Initial amount (auto‑created at registration and first read) | ✅ Done |
+| Ledger readout + recurrence expanders (`Fpfl.Display`) | ✅ Done |
 
 ---
 
