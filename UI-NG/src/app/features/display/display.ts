@@ -2,6 +2,7 @@ import { CurrencyPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MessageModule } from 'primeng/message';
@@ -21,6 +22,7 @@ import {
   today,
   validateRange,
 } from './display.models';
+import { exportLedgerToExcel } from './export/ledger-export';
 import { Ledger } from './ledger/ledger';
 
 /**
@@ -47,6 +49,7 @@ import { Ledger } from './ledger/ledger';
 })
 export class DisplayPage {
   private readonly api = inject(DisplayApi);
+  private readonly messages = inject(MessageService);
 
   protected readonly presets = RANGE_PRESETS;
 
@@ -76,6 +79,26 @@ export class DisplayPage {
     const q = this.query();
     return q ? `${formatDate(q.ledgerStartDate)} – ${formatDate(q.ledgerEndDate)}` : '';
   });
+
+  protected readonly exporting = signal(false);
+
+  /** Downloads what's on screen as an Excel workbook laid out like the Ledger tab. */
+  protected async exportToExcel(): Promise<void> {
+    const q = this.query();
+    const days = this.days();
+    if (!q || days.length === 0) {
+      return;
+    }
+
+    this.exporting.set(true);
+    try {
+      await exportLedgerToExcel(days, { start: q.ledgerStartDate, end: q.ledgerEndDate });
+    } catch {
+      this.messages.add({ severity: 'error', summary: 'The Excel file could not be created. Please try again.', life: 5000 });
+    } finally {
+      this.exporting.set(false);
+    }
+  }
 
   protected applyPreset(preset: (typeof RANGE_PRESETS)[number]): void {
     const start = this.start() ?? today();

@@ -11,6 +11,17 @@
       </h1>
       <p class="page__subtitle">Your balance, day by day, from your initial amount, credits and debits.</p>
     </div>
+
+    <div class="page__actions">
+      <p-button
+        label="Export to Excel"
+        icon="pi pi-file-excel"
+        [outlined]="true"
+        [loading]="exporting()"
+        [disabled]="days().length === 0 || resource.isLoading()"
+        (onClick)="exportToExcel()"
+      />
+    </div>
   </header>
 
   <form class="page__card range" (ngSubmit)="calculate()" novalidate>
