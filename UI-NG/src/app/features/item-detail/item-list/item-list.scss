@@ -88,8 +88,78 @@
   text-align: right;
 }
 
+// Phones: each item becomes a stacked card instead of a 6-column table you'd have to swipe.
+//   Name ............ Amount
+//   [Period] Schedule   ✎ 🗑
+//   Dates
 @media (max-width: 640px) {
   .items__count {
     padding: 0 0.75rem;
+  }
+
+  .items__filter {
+    max-width: none;
+  }
+
+  :host ::ng-deep .items__table {
+    .p-datatable-table {
+      min-width: 0 !important; // overrides [tableStyle] for desktop
+    }
+
+    .p-datatable-thead {
+      display: none;
+    }
+  }
+
+  .items__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name amount'
+      'period actions'
+      'schedule actions'
+      'dates actions';
+    column-gap: 0.75rem;
+    row-gap: 0.25rem;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--fpfl-border);
+
+    > td {
+      display: block;
+      padding: 0;
+      border: 0;
+      text-align: left;
+    }
+  }
+
+  .items__name {
+    grid-area: name;
+    overflow-wrap: anywhere;
+  }
+
+  .items__table td.col-amount {
+    grid-area: amount;
+    text-align: right;
+  }
+
+  .items__period {
+    grid-area: period;
+  }
+
+  .items__schedule {
+    grid-area: schedule;
+    font-size: 0.9rem;
+  }
+
+  .items__dates {
+    grid-area: dates;
+    font-size: 0.85rem;
+    white-space: normal;
+  }
+
+  .items__table td.col-actions {
+    grid-area: actions;
+    align-self: center;
+    width: auto;
   }
 }

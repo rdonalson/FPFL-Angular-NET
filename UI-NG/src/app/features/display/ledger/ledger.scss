@@ -104,7 +104,103 @@
   padding: 1.5rem;
 }
 
+// Phones: each day becomes a two-line row instead of a 6-column table you'd have to swipe.
+//   ›  Sat, Oct 17, 2026 · 2 items      $1,300.00
+//      Credits   Debits    Net           (only on days with activity)
 @media (max-width: 640px) {
+  :host ::ng-deep .ledger__table {
+    .p-datatable-table {
+      min-width: 0 !important; // overrides [tableStyle] for desktop
+    }
+
+    .p-datatable-thead {
+      display: none;
+    }
+  }
+
+  .ledger__toolbar {
+    flex-wrap: wrap;
+  }
+
+  .ledger__day {
+    display: grid;
+    grid-template-columns: 2.25rem repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      'toggle date date balance'
+      '. credits debits net';
+    align-items: center;
+    row-gap: 0.35rem;
+    padding: 0.6rem 0.75rem 0.6rem 0.25rem;
+    border-bottom: 1px solid var(--fpfl-border);
+
+    > td {
+      display: block;
+      padding: 0;
+      border: 0;
+    }
+  }
+
+  .ledger__day > .col-toggle {
+    grid-area: toggle;
+    width: auto;
+  }
+
+  .ledger__date {
+    grid-area: date;
+    white-space: normal;
+  }
+
+  .ledger__count {
+    display: block;
+    margin-left: 0;
+  }
+
+  .ledger__balance {
+    grid-area: balance;
+  }
+
+  .ledger__cell-credits,
+  .ledger__cell-debits,
+  .ledger__cell-net {
+    text-align: left;
+    font-size: 0.85rem;
+
+    &::before {
+      content: attr(data-label);
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--fpfl-muted);
+    }
+  }
+
+  .ledger__cell-credits {
+    grid-area: credits;
+  }
+
+  .ledger__cell-debits {
+    grid-area: debits;
+  }
+
+  .ledger__cell-net {
+    grid-area: net;
+  }
+
+  // Quiet days are one line: date and balance.
+  .ledger__row--quiet {
+    .ledger__cell-credits,
+    .ledger__cell-debits,
+    .ledger__cell-net {
+      display: none;
+    }
+  }
+
+  .ledger__detail-row td {
+    display: block;
+  }
+
   .ledger__items {
     padding-left: 0;
   }

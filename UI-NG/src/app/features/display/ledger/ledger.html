@@ -9,6 +9,7 @@
 </div>
 
 <p-table
+  class="ledger__table"
   [value]="rows()"
   dataKey="rollupKey"
   [expandedRowKeys]="expanded()"
@@ -30,7 +31,7 @@
   </ng-template>
 
   <ng-template #body let-day let-expanded="expanded">
-    <tr [class.ledger__row--quiet]="day.items.length === 0">
+    <tr class="ledger__day" [class.ledger__row--quiet]="day.items.length === 0">
       <td class="col-toggle">
         @if (day.items.length > 0) {
           <p-button
@@ -49,21 +50,21 @@
           <span class="ledger__count">{{ day.items.length }} {{ day.items.length === 1 ? 'item' : 'items' }}</span>
         }
       </td>
-      <td class="col-money">
+      <td class="col-money ledger__cell-credits" data-label="Credits">
         @if (day.creditSummary) {
           <span class="ledger__credit">{{ day.creditSummary | currency: 'USD' }}</span>
         } @else {
           <span class="ledger__none">—</span>
         }
       </td>
-      <td class="col-money">
+      <td class="col-money ledger__cell-debits" data-label="Debits">
         @if (day.debitSummary) {
           <span class="ledger__debit">{{ day.debitSummary | currency: 'USD' }}</span>
         } @else {
           <span class="ledger__none">—</span>
         }
       </td>
-      <td class="col-money">
+      <td class="col-money ledger__cell-net" data-label="Net">
         @if (day.net) {
           <span [class.ledger__credit]="day.net > 0" [class.ledger__debit]="day.net < 0">{{ day.net | currency: 'USD' }}</span>
         } @else {

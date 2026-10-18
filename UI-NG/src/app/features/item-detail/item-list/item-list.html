@@ -55,6 +55,7 @@
     </div>
 
     <p-table
+      class="items__table"
       [value]="filteredRows()"
       [loading]="items.isLoading()"
       dataKey="item.id"
@@ -77,13 +78,13 @@
       </ng-template>
 
       <ng-template #body let-row>
-        <tr>
+        <tr class="items__row">
           <td class="items__name">{{ row.name }}</td>
           <td class="col-amount items__amount" [class.items__amount--debit]="!isCredit()">
             {{ row.amount | currency: 'USD' }}
           </td>
-          <td><p-tag [value]="row.period" severity="secondary" [rounded]="true" /></td>
-          <td>{{ row.schedule }}</td>
+          <td class="items__period"><p-tag [value]="row.period" severity="secondary" [rounded]="true" /></td>
+          <td class="items__schedule">{{ row.schedule }}</td>
           <td class="items__dates">{{ row.dates }}</td>
           <td class="col-actions">
             <p-button

@@ -24,6 +24,13 @@ body {
   margin: 0;
 }
 
+// Phones zoom a whole page out when anything is wider than the screen, so clip stray overflow at
+// the page edge. Wide content (tables) scrolls inside its own container instead.
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: var(--fpfl-bg);
