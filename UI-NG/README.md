@@ -40,7 +40,7 @@ The folder layout mirrors the backend's bounded contexts to keep the system cons
 UI-NG/
  ├── public/                     # Static assets copied as-is
  │    ├── images/                # avatar + galleria/ (18 landing-page photos)
- │    └── media/                 # financial-planner-guide.pdf
+ │    └── media/                 # fpfl-user-guide.pdf, financial-planner-guide.pdf
  ├── src/
  │    ├── app/
  │    │    ├── core/             # App-wide building blocks
@@ -154,7 +154,7 @@ Each feature folder under `src/app/features` encapsulates:
 
 Implemented today:
 
-- **`home`** — PrimeNG Galleria auto‑cycling through landing photos, the project summary, the Financial Planner Guide PDF, and guest / sign‑in calls to action
+- **`home`** — PrimeNG Galleria auto‑cycling through landing photos, the project summary, the FPFL User Guide PDF, and guest / sign‑in calls to action
 - **`item-types`** and **`time-periods`** — PrimeNG tables with refresh, error messages with correlation reference, and an admin dialog for add / edit / delete whose name validation matches the API's strict sanitizer
 - **Sidebar** ([`core/layout/sidebar`](src/app/core/layout/sidebar)) — a ☰ drawer from the top bar; the menu is a small data file ([`menu.ts`](src/app/core/layout/sidebar/menu.ts)) with a role filter, so the Admin section only appears for `ROLE_ADMIN`
 - **`item-detail`** — credits and debits:
