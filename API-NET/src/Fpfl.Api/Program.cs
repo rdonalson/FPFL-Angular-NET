@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+
 using Fpfl.Api.Controllers;
 using Fpfl.Api.Exceptions;
 using Fpfl.Api.Health;
@@ -10,6 +11,7 @@ using Fpfl.Common;
 using Fpfl.Display;
 using Fpfl.Items;
 using Fpfl.Items.Infrastructure.Health;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
@@ -51,6 +53,7 @@ builder.Services.AddSingleton<AuthMapper>();
 builder.Services.AddSingleton<TimePeriodMapper>();
 builder.Services.AddSingleton<ItemMapper>();
 builder.Services.AddSingleton<DisplayMapper>();
+builder.Services.AddSingleton<DebtMapper>();
 
 builder.Services.AddControllers();
 

@@ -7,7 +7,8 @@ import { toSession } from '../../core/auth/auth.models';
 import { toIsoDate } from '../item-detail/item-form';
 import { DisplayPage } from './display';
 import { addDays, addMonths, today } from './display.models';
-import { makeDay, sampleLedger } from './testing-ledger';
+import { DebtPaydown } from './paydown/paydown.models';
+import { makeDay, sampleLedger, samplePaydown } from './testing-ledger';
 
 describe('DisplayPage', () => {
   let fixture: ComponentFixture<DisplayPage>;
@@ -47,6 +48,10 @@ describe('DisplayPage', () => {
 
   const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
   const ledgerUrl = apiUrl('/display/ledger');
+  const paydownUrl = apiUrl('/display/paydown');
+
+  /** Answers the paydown request that runs alongside every ledger request. */
+  const flushPaydown = (debts: DebtPaydown[] = []) => http.expectOne(paydownUrl).flush(envelope(debts));
 
   it('builds the next 90 days on arrival and shows the summary', async () => {
     await create();
@@ -60,6 +65,7 @@ describe('DisplayPage', () => {
     });
 
     request.flush(envelope(sampleLedger()));
+    flushPaydown();
     await fixture.whenStable();
 
     expect(text()).toContain('Starting balance');
@@ -77,6 +83,7 @@ describe('DisplayPage', () => {
     http.expectOne(ledgerUrl).flush(
       envelope([makeDay(1, '2026-10-17', 100), makeDay(2, '2026-10-18', -50, [{ name: 'Car', amount: -150 }])]),
     );
+    flushPaydown();
     await fixture.whenStable();
 
     expect(text()).toContain('Your balance drops below $0.00 on Oct 18, 2026.');
@@ -85,6 +92,7 @@ describe('DisplayPage', () => {
   it('re-runs with a preset range', async () => {
     await create();
     http.expectOne(ledgerUrl).flush(envelope(sampleLedger()));
+    flushPaydown();
     await fixture.whenStable();
 
     const presetButton = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button')).find(
@@ -97,6 +105,9 @@ describe('DisplayPage', () => {
     const request = http.expectOne(ledgerUrl);
     expect(request.request.body.ledgerStartDate).toBe(toIsoDate(today()));
     expect(request.request.body.ledgerEndDate).toBe(toIsoDate(addMonths(today(), 12)));
+    const paydownRequest = http.expectOne(paydownUrl);
+    expect(paydownRequest.request.body).toEqual(request.request.body);
+    paydownRequest.flush(envelope([]));
     request.flush(envelope(sampleLedger()));
     await fixture.whenStable();
   });
@@ -107,9 +118,29 @@ describe('DisplayPage', () => {
     http
       .expectOne(ledgerUrl)
       .flush(envelope(null, 400, 'A ledger can cover at most 10 years', 'ref-1'), { status: 400, statusText: 'Bad Request' });
+    http.expectOne(paydownUrl).flush(envelope(null, 400, 'A ledger can cover at most 10 years', 'ref-1'), { status: 400, statusText: 'Bad Request' });
     await fixture.whenStable();
 
     expect(text()).toContain('A ledger can cover at most 10 years');
     expect(text()).toContain('Reference: ref-1');
+  });
+
+  it('adds the Paydown tabs when debts are tracked, and only then', async () => {
+    await create();
+    http.expectOne(ledgerUrl).flush(envelope(sampleLedger()));
+    flushPaydown([samplePaydown()]);
+    await fixture.whenStable();
+
+    expect(text()).toContain('Paydown chart');
+    expect(text()).toContain('Paydown ledger');
+  });
+
+  it('leaves the Paydown tabs out when nothing is tracked', async () => {
+    await create();
+    http.expectOne(ledgerUrl).flush(envelope(sampleLedger()));
+    flushPaydown();
+    await fixture.whenStable();
+
+    expect(text()).not.toContain('Paydown chart');
   });
 });

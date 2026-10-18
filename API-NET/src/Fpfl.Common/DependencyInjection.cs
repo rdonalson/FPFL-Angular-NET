@@ -1,4 +1,5 @@
 using Fpfl.Common.Sanitization;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fpfl.Common;

@@ -1,0 +1,292 @@
+<section class="page">
+  <header class="page__header">
+    <div>
+      <a class="page__back" routerLink="/">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Home
+      </a>
+      <h1 class="page__title">
+        <span class="paydown__badge" aria-hidden="true"><i class="pi pi-credit-card"></i></span>
+        Debt Paydown
+      </h1>
+      <p class="page__subtitle">Send part of your credits to paying down a debt. The forecast deducts it and charts the payoff.</p>
+    </div>
+
+    <div class="page__actions">
+      <p-button icon="pi pi-plus" label="Track a debt" [disabled]="untrackedDebits().length === 0" (onClick)="openNew()" />
+      <p-button routerLink="/display" icon="pi pi-chart-line" label="Forecast" [outlined]="true" />
+    </div>
+  </header>
+
+  @if (loadError(); as err) {
+    <p-message severity="error" class="page__error">
+      {{ err.message }}
+      @if (err.correlationId) {
+        <span class="page__correlation">Reference: {{ err.correlationId }}</span>
+      }
+    </p-message>
+  }
+
+  @if (debts().length > 0) {
+    <div class="paydown__list">
+      @for (debt of debts(); track debt.id) {
+        <article class="page__card debt" [attr.aria-label]="debt.name">
+          <header class="debt__header">
+            <div>
+              <h2 class="debt__name">{{ debt.name }}</h2>
+              <p class="debt__meta">
+                Payment {{ debt.payment ?? 0 | currency: 'USD' }}
+                @if (schedule(debt.itemId); as text) {
+                  · {{ text }}
+                }
+              </p>
+            </div>
+            <div class="debt__actions">
+              <p-button icon="pi pi-pencil" [text]="true" [rounded]="true" [ariaLabel]="'Edit ' + debt.name" (onClick)="openEdit(debt)" />
+              <p-button icon="pi pi-trash" severity="danger" [text]="true" [rounded]="true" [ariaLabel]="'Stop tracking ' + debt.name" (onClick)="confirmDelete(debt)" />
+            </div>
+          </header>
+
+          <div class="debt__owed">
+            <span class="debt__label">Owed</span>
+            <span class="debt__balance">{{ debt.balance | currency: 'USD' }}</span>
+            <span class="debt__meta">
+              as of {{ formatDate(debt.balanceDate) }}
+              @if (debt.apr > 0) {
+                · {{ formatPercent(debt.apr) }} APR
+              } @else {
+                · no interest
+              }
+            </span>
+          </div>
+
+          <div class="debt__allocations">
+            <span class="debt__label">Allocations</span>
+            @if (debt.allocations.length === 0) {
+              <p class="debt__none">Only the debit's own payment pays this down. Edit it to send part of a credit here too.</p>
+            } @else {
+              <ul class="allocations">
+                @for (allocation of debt.allocations; track allocation.id) {
+                  <li class="allocation">
+                    <span class="allocation__percent">{{ formatPercent(allocation.percent) }}</span>
+                    <span class="allocation__credit">
+                      of <strong>{{ allocation.creditName }}</strong>
+                      <span class="allocation__schedule">{{ schedule(allocation.creditItemId) }}</span>
+                    </span>
+                    <span class="allocation__share">{{ allocation.perOccurrence | currency: 'USD' }} each</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  } @else if (loading()) {
+    <div class="page__card"><p class="page__empty">Loading…</p></div>
+  } @else if (!loadError()) {
+    <div class="page__card paydown__empty">
+      <i class="pi pi-credit-card paydown__empty-icon" aria-hidden="true"></i>
+      @if (debits().length === 0) {
+        <p>Add the debt's payment as a <a routerLink="/debits">debit</a> first (for example your credit card payment), then track it here.</p>
+      } @else {
+        <p>Pick a debit, such as a credit card payment, enter what you owe, and choose how much of each credit goes toward it.</p>
+        <p-button icon="pi pi-plus" label="Track a debt" (onClick)="openNew()" />
+      }
+    </div>
+  }
+</section>
+
+<!-- Track / edit -->
+<p-dialog
+  [header]="editorTitle()"
+  [visible]="editing() !== null"
+  (visibleChange)="$event || closeEditor()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '40rem' }"
+  [breakpoints]="{ '640px': '95vw' }"
+>
+  @if (editing() !== null) {
+    <form class="editor" (ngSubmit)="save()" novalidate>
+      <div class="editor__grid">
+        <div class="editor__field editor__field--wide">
+          <label for="debt-item">Debit being paid down</label>
+          <p-select
+            inputId="debt-item"
+            name="itemId"
+            [options]="debitOptions()"
+            optionLabel="name"
+            optionValue="id"
+            placeholder="Choose a debit, e.g. a credit card payment"
+            [ngModel]="form().itemId"
+            (ngModelChange)="patch({ itemId: $event })"
+            [disabled]="editing() !== 'new'"
+            [fluid]="true"
+            appendTo="body"
+          />
+          @if (chosenDebit(); as debit) {
+            <small class="editor__hint">Its payment of {{ debit.amount | currency: 'USD' }} ({{ schedule(debit.id) }}) also pays it down.</small>
+          }
+        </div>
+
+        <div class="editor__field">
+          <label for="debt-balance">Balance owed</label>
+          <p-inputnumber
+            inputId="debt-balance"
+            name="balance"
+            mode="currency"
+            currency="USD"
+            locale="en-US"
+            placeholder="$0.00"
+            [ngModel]="form().balance"
+            (ngModelChange)="patch({ balance: $event })"
+            [fluid]="true"
+          />
+        </div>
+
+        <div class="editor__field">
+          <label for="debt-date">As of</label>
+          <p-datepicker
+            inputId="debt-date"
+            name="balanceDate"
+            [ngModel]="form().balanceDate"
+            (ngModelChange)="patch({ balanceDate: $event })"
+            dateFormat="M d, yy"
+            [showIcon]="true"
+            [fluid]="true"
+            appendTo="body"
+          />
+        </div>
+
+        <div class="editor__field">
+          <label for="debt-apr">APR</label>
+          <p-inputnumber
+            inputId="debt-apr"
+            name="apr"
+            suffix="%"
+            [minFractionDigits]="0"
+            [maxFractionDigits]="3"
+            [min]="0"
+            [max]="100"
+            placeholder="0%"
+            [ngModel]="form().apr"
+            (ngModelChange)="patch({ apr: $event })"
+            [fluid]="true"
+          />
+          <small class="editor__hint">Charged monthly. Leave 0 for none.</small>
+        </div>
+      </div>
+
+      <fieldset class="editor__allocations">
+        <legend>Allocations</legend>
+        <p class="editor__hint">Each time the credit comes in, this share goes to the debt.</p>
+
+        @for (allocation of form().allocations; track allocation.key; let i = $index) {
+          <div class="editor__allocation">
+            <p-select
+              [inputId]="'alloc-credit-' + i"
+              [name]="'credit' + allocation.key"
+              [options]="credits()"
+              optionLabel="name"
+              optionValue="id"
+              placeholder="Choose a credit"
+              [ngModel]="allocation.creditItemId"
+              (ngModelChange)="patchAllocation(allocation.key, { creditItemId: $event })"
+              [fluid]="true"
+              appendTo="body"
+              [ariaLabel]="'Credit for allocation ' + (i + 1)"
+            />
+            <p-inputnumber
+              [inputId]="'alloc-percent-' + i"
+              [name]="'percent' + allocation.key"
+              suffix="%"
+              [minFractionDigits]="0"
+              [maxFractionDigits]="2"
+              [min]="0"
+              [max]="100"
+              placeholder="%"
+              [ngModel]="allocation.percent"
+              (ngModelChange)="patchAllocation(allocation.key, { percent: $event })"
+              [fluid]="true"
+              [ariaLabel]="'Percentage for allocation ' + (i + 1)"
+            />
+            <p-button
+              icon="pi pi-times"
+              [text]="true"
+              [rounded]="true"
+              severity="secondary"
+              [ariaLabel]="'Remove allocation ' + (i + 1)"
+              (onClick)="removeAllocation(allocation.key)"
+            />
+
+            @if (allocation.creditItemId !== null) {
+              <small class="editor__share">
+                @if (share(allocation) > 0) {
+                  {{ share(allocation) | currency: 'USD' }} each time · {{ schedule(allocation.creditItemId) }}
+                } @else {
+                  {{ schedule(allocation.creditItemId) }}
+                }
+                @if (takenElsewhere(allocation.creditItemId) > 0) {
+                  <span class="editor__left">
+                    · {{ formatPercent(100 - takenElsewhere(allocation.creditItemId)) }} left (other debts take
+                    {{ formatPercent(takenElsewhere(allocation.creditItemId)) }})
+                  </span>
+                }
+              </small>
+            }
+          </div>
+        } @empty {
+          <p class="editor__none">None yet: only the debit's own payment will pay it down.</p>
+        }
+
+        <p-button
+          icon="pi pi-plus"
+          label="Add allocation"
+          [text]="true"
+          size="small"
+          [disabled]="credits().length === 0 || form().allocations.length >= maxAllocations"
+          (onClick)="addAllocation()"
+        />
+        @if (credits().length === 0) {
+          <small class="editor__hint">Add a <a routerLink="/credits">credit</a> first to allocate part of it.</small>
+        }
+      </fieldset>
+
+      @if (problem(); as message) {
+        <p-message severity="error" class="editor__problem">{{ message }}</p-message>
+      }
+
+      <div class="editor__actions">
+        <p-button label="Cancel" [text]="true" [disabled]="saving()" (onClick)="closeEditor()" />
+        <p-button type="submit" [label]="editing() === 'new' ? 'Track debt' : 'Save'" icon="pi pi-check" [loading]="saving()" />
+      </div>
+    </form>
+  }
+</p-dialog>
+
+<!-- Stop tracking -->
+<p-dialog
+  header="Stop tracking"
+  [visible]="pendingDelete() !== null"
+  (visibleChange)="$event || cancelDelete()"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  [style]="{ width: '26rem' }"
+  [breakpoints]="{ '640px': '95vw' }"
+>
+  @if (pendingDelete(); as debt) {
+    @if (deleteError(); as message) {
+      <p-message severity="error" class="editor__problem">{{ message }}</p-message>
+    }
+    <p>
+      Stop tracking <strong>{{ debt.name }}</strong>? Its allocations are removed and the forecast stops deducting them.
+      The debit itself stays.
+    </p>
+    <div class="editor__actions">
+      <p-button label="Cancel" [text]="true" [disabled]="deleting()" (onClick)="cancelDelete()" />
+      <p-button label="Stop tracking" icon="pi pi-trash" severity="danger" [loading]="deleting()" (onClick)="delete()" />
+    </div>
+  }
+</p-dialog>

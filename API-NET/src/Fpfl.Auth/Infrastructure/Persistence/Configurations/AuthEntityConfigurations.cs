@@ -1,4 +1,5 @@
 using Fpfl.Auth.Domain.Entities;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

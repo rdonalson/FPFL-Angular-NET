@@ -121,7 +121,7 @@ public sealed class LedgerBuilderTests
     [Fact]
     public async Task The_service_only_builds_the_callers_own_ledger_unless_admin()
     {
-        var service = new LedgerReadoutService(new FakeItemRepository([InitialAmount(250)]));
+        var service = new LedgerReadoutService(new FakeItemRepository([InitialAmount(250)]), new InMemoryDebtRepository());
 
         await Assert.ThrowsAsync<ForbiddenOperationException>(
             () => service.BuildAsync(Rick, D(10, 1), D(10, 2), Guest, requesterIsAdmin: false, default));
@@ -133,7 +133,7 @@ public sealed class LedgerBuilderTests
     [Fact]
     public async Task The_service_rejects_backwards_or_overlong_ranges()
     {
-        var service = new LedgerReadoutService(new FakeItemRepository([]));
+        var service = new LedgerReadoutService(new FakeItemRepository([]), new InMemoryDebtRepository());
 
         await Assert.ThrowsAsync<DomainValidationException>(
             () => service.BuildAsync(Rick, D(10, 2), D(10, 1), Rick, requesterIsAdmin: false, default));

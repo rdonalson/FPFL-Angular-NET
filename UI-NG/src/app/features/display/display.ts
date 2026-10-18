@@ -24,6 +24,8 @@ import {
 } from './display.models';
 import { exportLedgerToExcel } from './export/ledger-export';
 import { Ledger } from './ledger/ledger';
+import { PaydownChart } from './paydown/paydown-chart';
+import { PaydownLedger } from './paydown/paydown-ledger';
 
 /**
  * The forecast (UI-TSX's DisplayPage): pick a date range, then see the balance day by day as a chart
@@ -42,6 +44,8 @@ import { Ledger } from './ledger/ledger';
     TabsModule,
     LedgerChart,
     Ledger,
+    PaydownChart,
+    PaydownLedger,
   ],
   templateUrl: './display.html',
   styleUrls: ['../item-types/item-types.scss', './display.scss'],
@@ -61,6 +65,12 @@ export class DisplayPage {
   private readonly query = signal<LedgerRequest | undefined>(toLedgerRequest(this.start()!, this.end()!));
 
   protected readonly resource = this.api.ledger(() => this.query());
+
+  /** Debt Paydown over the same window; empty when nothing is tracked. */
+  protected readonly paydownResource = this.api.paydown(() => this.query());
+  protected readonly paydown = computed(() =>
+    this.paydownResource.hasValue() ? (this.paydownResource.value()?.data ?? []) : [],
+  );
 
   /** value() throws while the resource is in an error state, so read it only when there is one. */
   protected readonly days = computed(() => (this.resource.hasValue() ? (this.resource.value()?.data ?? []) : []));
@@ -92,7 +102,7 @@ export class DisplayPage {
 
     this.exporting.set(true);
     try {
-      await exportLedgerToExcel(days, { start: q.ledgerStartDate, end: q.ledgerEndDate });
+      await exportLedgerToExcel(days, { start: q.ledgerStartDate, end: q.ledgerEndDate, paydown: this.paydown() });
     } catch {
       this.messages.add({ severity: 'error', summary: 'The Excel file could not be created. Please try again.', life: 5000 });
     } finally {
@@ -120,6 +130,7 @@ export class DisplayPage {
     const current = this.query();
     if (current && current.ledgerStartDate === request.ledgerStartDate && current.ledgerEndDate === request.ledgerEndDate) {
       this.resource.reload(); // same range: pick up any items changed since
+      this.paydownResource.reload();
     } else {
       this.query.set(request);
     }

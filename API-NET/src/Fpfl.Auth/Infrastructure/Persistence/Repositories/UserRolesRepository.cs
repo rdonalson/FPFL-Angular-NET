@@ -1,7 +1,9 @@
 using Fpfl.Auth.Domain.Entities;
 using Fpfl.Auth.Domain.Repositories;
 using Fpfl.Common.Exceptions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Npgsql;
 
 namespace Fpfl.Auth.Infrastructure.Persistence.Repositories;

@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { ApiResponse, apiUrl } from '../../../core/api/api-response';
 import { LedgerDay, LedgerRequest } from '../display.models';
+import { DebtPaydown } from '../paydown/paydown.models';
 
 /** The forecast ledger (UI-TSX's displayApi). */
 @Injectable({ providedIn: 'root' })
@@ -15,6 +16,14 @@ export class DisplayApi {
     return httpResource<ApiResponse<LedgerDay[]>>(() => {
       const body = request();
       return body ? { url: apiUrl('/display/ledger'), method: 'POST', body } : undefined;
+    });
+  }
+
+  /** POST /display/paydown with the same body as the ledger: each tracked debt over the window. */
+  paydown(request: () => LedgerRequest | undefined): HttpResourceRef<ApiResponse<DebtPaydown[]> | undefined> {
+    return httpResource<ApiResponse<DebtPaydown[]>>(() => {
+      const body = request();
+      return body ? { url: apiUrl('/display/paydown'), method: 'POST', body } : undefined;
     });
   }
 }

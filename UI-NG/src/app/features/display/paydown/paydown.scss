@@ -1,0 +1,219 @@
+// Shared by the Paydown chart and Paydown ledger tabs.
+
+:host {
+  display: grid;
+  gap: 1.25rem;
+}
+
+// ---- chart tab
+
+.paydown-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: 0.75rem;
+}
+
+.paydown-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--fpfl-border);
+  border-top: 3px solid var(--debt-color);
+  border-radius: 10px;
+}
+
+.paydown-card__name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.paydown-card__swatch,
+.paydown-row__swatch {
+  flex: none;
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 3px;
+  background: var(--debt-color);
+}
+
+.paydown-card__figures {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  dt {
+    color: var(--fpfl-muted);
+    font-size: 0.85rem;
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+}
+
+.paydown-card__paid {
+  color: var(--p-green-700, #15803d);
+  font-weight: 600;
+}
+
+.paydown-card__interest {
+  color: var(--p-red-700, #b91c1c);
+}
+
+.paydown-card__payoff {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--p-green-700, #15803d);
+}
+
+.paydown-card__payoff--never {
+  color: var(--p-orange-700, #c2410c);
+}
+
+.paydown-chart {
+  margin: 0;
+}
+
+.paydown-chart__title {
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fpfl-muted);
+}
+
+.paydown-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--fpfl-muted);
+}
+
+// ---- ledger tab
+
+.paydown-ledger__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.paydown-ledger__label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.paydown-ledger__count {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--fpfl-muted);
+}
+
+.col-money {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.paydown-row__date {
+  white-space: nowrap;
+}
+
+.paydown-row__debt {
+  .paydown-row__swatch {
+    margin-right: 0.45rem;
+  }
+}
+
+.paydown-row__amount {
+  color: var(--p-green-700, #15803d);
+  font-weight: 600;
+}
+
+.paydown-row__amount--interest {
+  color: var(--p-red-700, #b91c1c);
+}
+
+.paydown-row__balance {
+  font-weight: 700;
+}
+
+.paydown-row__balance--zero {
+  color: var(--p-green-700, #15803d);
+}
+
+.paydown-ledger__empty {
+  text-align: center;
+  color: var(--fpfl-muted);
+  padding: 1.5rem;
+}
+
+// Phones: each entry is a two-line card instead of a 5-column table.
+@media (max-width: 640px) {
+  :host ::ng-deep .paydown-ledger__table {
+    .p-datatable-table {
+      min-width: 0 !important; // overrides [tableStyle] for desktop
+    }
+
+    .p-datatable-thead {
+      display: none;
+    }
+  }
+
+  .paydown-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'date balance'
+      'debt amount'
+      'activity activity';
+    row-gap: 0.2rem;
+    column-gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--fpfl-border);
+
+    > td {
+      display: block;
+      padding: 0;
+      border: 0;
+    }
+  }
+
+  .paydown-row__date {
+    grid-area: date;
+    font-weight: 600;
+  }
+
+  .paydown-row__debt {
+    grid-area: debt;
+    font-size: 0.88rem;
+  }
+
+  .paydown-row__activity {
+    grid-area: activity;
+    font-size: 0.85rem;
+    color: var(--fpfl-muted);
+  }
+
+  .paydown-row__amount {
+    grid-area: amount;
+  }
+
+  .paydown-row__balance {
+    grid-area: balance;
+  }
+}

@@ -5,4 +5,5 @@ namespace Fpfl.Common.Exceptions;
 ///     details stay in the log under the correlation ID.
 /// </summary>
 public sealed class RepositoryException(string message, Exception innerException)
-    : DomainException(message, innerException) { }
+    : DomainException(message, innerException)
+{ }

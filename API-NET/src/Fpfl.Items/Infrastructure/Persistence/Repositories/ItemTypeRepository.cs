@@ -1,7 +1,9 @@
 using Fpfl.Common.Exceptions;
 using Fpfl.Items.Domain.Entities;
 using Fpfl.Items.Domain.Repositories;
+
 using Microsoft.EntityFrameworkCore;
+
 using Npgsql;
 
 namespace Fpfl.Items.Infrastructure.Persistence.Repositories;

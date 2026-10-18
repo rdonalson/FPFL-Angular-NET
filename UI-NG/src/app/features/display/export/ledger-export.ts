@@ -2,6 +2,7 @@ import type * as ExcelJS from 'exceljs';
 
 import { formatDate } from '../../item-detail/schedule';
 import { LedgerDay, summarize } from '../display.models';
+import { DebtPaydown, describeEvent, payoffStatus } from '../paydown/paydown.models';
 
 /**
  * Ledger → Excel, a port of the original FPFL Angular app's ExportService: the same layout as the
@@ -20,6 +21,8 @@ export interface LedgerExportOptions {
   /** 'yyyy-MM-dd' */
   end: string;
   createdAt?: Date;
+  /** Tracked debts over the same window; adds a "Debt Paydown" sheet when there are any. */
+  paydown?: readonly DebtPaydown[];
 }
 
 const SHEET = 'Ledger';
@@ -72,6 +75,10 @@ export function buildLedgerWorkbook(excel: ExcelModule, days: readonly LedgerDay
     if (day.items.length > 0) {
       writeItems(ws, day);
     }
+  }
+
+  if (options.paydown?.length) {
+    writePaydownSheet(workbook, options.paydown, options);
   }
 
   return workbook;
@@ -219,5 +226,87 @@ function writeItems(ws: ExcelJS.Worksheet, day: LedgerDay): void {
     row.getCell(3).numFmt = MONEY;
     row.getCell(2).font = { color: { argb: COLOR.credit } };
     row.getCell(3).font = { color: { argb: COLOR.debit } };
+  }
+}
+
+const PAYDOWN_SHEET = 'Debt Paydown';
+const PAYDOWN_COLUMNS = 6;
+
+/**
+ * One summary row per debt (owed at the start, paid, interest, owed at the end, payoff), with its
+ * payments, allocations and interest in a collapsed outline group underneath, like the Ledger sheet.
+ */
+function writePaydownSheet(workbook: ExcelJS.Workbook, debts: readonly DebtPaydown[], options: LedgerExportOptions): void {
+  const ws = workbook.addWorksheet(PAYDOWN_SHEET, {
+    properties: { outlineLevelRow: 1, outlineProperties: { summaryBelow: false, summaryRight: true } },
+  });
+  ws.columns = [{ width: 26 }, { width: 20 }, { width: 24 }, { width: 16 }, { width: 18 }, { width: 22 }];
+
+  const title = ws.addRow(['Debt Paydown']);
+  title.font = { size: 16, bold: true };
+  title.height = 24;
+  const range = ws.addRow([`${formatDate(options.start)} – ${formatDate(options.end)}`]);
+  range.font = { color: { argb: COLOR.muted } };
+  for (const row of [title, range]) {
+    ws.mergeCells(row.number, 1, row.number, PAYDOWN_COLUMNS);
+  }
+  ws.addRow([]);
+
+  const header = ws.addRow(['Debt', 'Owed at start', 'Paid', 'Interest', 'Owed at end', 'Payoff']);
+  header.height = 20;
+  header.eachCell((cell, column) => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.header } };
+    cell.font = { bold: true, color: { argb: COLOR.headerText } };
+    cell.border = box;
+    cell.alignment = { vertical: 'middle', horizontal: column === 1 || column === PAYDOWN_COLUMNS ? 'left' : 'right' };
+  });
+  ws.views = [{ state: 'frozen', ySplit: header.number, showGridLines: false }];
+
+  for (const debt of debts) {
+    const status = payoffStatus(debt, options.end);
+    const payoff =
+      status === 'never' ? 'Not within 30 years' : `${formatDate(debt.payoffDate)}${status === 'later' ? ' (after range)' : ''}`;
+
+    const row = ws.addRow([debt.name ?? 'Debt', debt.startingBalance, debt.totalPaid, debt.totalInterest, debt.endingBalance, payoff]);
+    row.getCell(1).font = { bold: true };
+    for (const column of [2, 3, 4, 5]) {
+      row.getCell(column).numFmt = column === 3 || column === 4 ? MONEY : BALANCE;
+    }
+    row.getCell(3).font = { color: { argb: COLOR.credit } };
+    row.getCell(4).font = { color: { argb: debt.totalInterest ? COLOR.debit : COLOR.muted } };
+    row.getCell(5).font = { bold: true };
+    row.getCell(6).font = { color: { argb: status === 'never' ? COLOR.debit : COLOR.credit } };
+    row.eachCell({ includeEmpty: true }, (cell) => (cell.border = { bottom: thin }));
+
+    if (debt.events.length > 0) {
+      const sub = ws.addRow([null, 'Date', 'Activity', 'Amount', 'Balance left']);
+      sub.outlineLevel = 1;
+      sub.hidden = true;
+      sub.eachCell((cell, column) => {
+        if (column === 1) {
+          return;
+        }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.subHeader } };
+        cell.font = { bold: true, size: 10 };
+        cell.border = box;
+        cell.alignment = { horizontal: column >= 4 ? 'right' : 'left' };
+      });
+
+      for (const event of debt.events) {
+        const line = ws.addRow([null, excelDate(event.date), describeEvent(event), Math.abs(event.amount), event.balanceAfter]);
+        line.outlineLevel = 1;
+        line.hidden = true;
+        for (let column = 2; column <= 5; column++) {
+          const cell = line.getCell(column);
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: COLOR.detail } };
+          cell.border = box;
+        }
+        line.getCell(2).numFmt = DAY;
+        line.getCell(2).alignment = { horizontal: 'left' };
+        line.getCell(4).numFmt = MONEY;
+        line.getCell(4).font = { color: { argb: event.kind === 'interest' ? COLOR.debit : COLOR.credit } };
+        line.getCell(5).numFmt = BALANCE;
+      }
+    }
   }
 }

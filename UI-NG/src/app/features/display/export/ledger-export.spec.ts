@@ -1,7 +1,7 @@
 import * as ExcelModule from 'exceljs';
 import type { Row, Worksheet } from 'exceljs';
 
-import { makeDay, sampleLedger } from '../testing-ledger';
+import { makeDay, sampleLedger, samplePaydown } from '../testing-ledger';
 import { buildLedgerWorkbook, excelDate, ledgerFileName, resolveExcel } from './ledger-export';
 
 describe('ledger export', () => {
@@ -102,5 +102,37 @@ describe('ledger export', () => {
   it('keeps calendar days in any time zone and names the file by range', () => {
     expect(excelDate('2026-10-18').toISOString()).toBe('2026-10-18T00:00:00.000Z');
     expect(ledgerFileName(options)).toBe('Forecast Ledger 2026-10-17 to 2026-10-19.xlsx');
+  });
+
+  it('adds a Debt Paydown sheet with each debt and its activity grouped underneath', () => {
+    const workbook = buildLedgerWorkbook(excel, sampleLedger(), { ...options, paydown: [samplePaydown()] });
+    const ws = workbook.getWorksheet('Debt Paydown')!;
+
+    expect(ws.getCell('A1').value).toBe('Debt Paydown');
+
+    let summary: Row | undefined;
+    ws.eachRow((row) => {
+      if (row.getCell(1).value === 'Chase Visa') {
+        summary = row;
+      }
+    });
+    expect(cells(summary!)).toEqual(['Chase Visa', 1000, 825, 0, 175]);
+    expect(summary!.getCell(6).value).toBe('Nov 18, 2026 (after range)');
+
+    const sub = ws.getRow(summary!.number + 1);
+    const payment = ws.getRow(summary!.number + 2);
+    const allocation = ws.getRow(summary!.number + 3);
+    expect(cells(sub)).toEqual([null, 'Date', 'Activity', 'Amount', 'Balance left']);
+    expect(cells(payment)).toEqual([null, excelDate('2026-10-18'), 'Scheduled payment', 200, 800]);
+    expect(cells(allocation)).toEqual([null, excelDate('2026-10-18'), '25% of Paycheck', 625, 175]);
+    for (const row of [sub, payment, allocation]) {
+      expect(row.outlineLevel).toBe(1);
+      expect(row.hidden).toBe(true);
+    }
+  });
+
+  it('leaves the Debt Paydown sheet out when nothing is tracked', () => {
+    const workbook = buildLedgerWorkbook(excel, sampleLedger(), { ...options, paydown: [] });
+    expect(workbook.getWorksheet('Debt Paydown')).toBeUndefined();
   });
 });

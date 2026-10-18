@@ -4,6 +4,7 @@ using Fpfl.Auth.Domain.Entities;
 using Fpfl.Auth.Domain.Repositories;
 using Fpfl.Auth.Infrastructure.Security;
 using Fpfl.Common.Exceptions;
+
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;

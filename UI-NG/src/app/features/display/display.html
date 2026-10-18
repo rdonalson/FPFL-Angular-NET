@@ -106,10 +106,14 @@
     }
 
     <div class="page__card">
-      <p-tabs value="chart">
+      <p-tabs value="chart" [scrollable]="true">
         <p-tablist>
           <p-tab value="chart"><i class="pi pi-chart-line" aria-hidden="true"></i> Chart</p-tab>
           <p-tab value="ledger"><i class="pi pi-list" aria-hidden="true"></i> Ledger</p-tab>
+          @if (paydown().length > 0) {
+            <p-tab value="paydown-chart"><i class="pi pi-credit-card" aria-hidden="true"></i> Paydown chart</p-tab>
+            <p-tab value="paydown-ledger"><i class="pi pi-list-check" aria-hidden="true"></i> Paydown ledger</p-tab>
+          }
         </p-tablist>
         <p-tabpanels>
           <p-tabpanel value="chart">
@@ -118,6 +122,14 @@
           <p-tabpanel value="ledger" class="display__ledger-panel">
             <app-ledger [days]="days()" />
           </p-tabpanel>
+          @if (paydown().length > 0) {
+            <p-tabpanel value="paydown-chart">
+              <app-paydown-chart [debts]="paydown()" [days]="days()" />
+            </p-tabpanel>
+            <p-tabpanel value="paydown-ledger">
+              <app-paydown-ledger [debts]="paydown()" />
+            </p-tabpanel>
+          }
         </p-tabpanels>
       </p-tabs>
     </div>

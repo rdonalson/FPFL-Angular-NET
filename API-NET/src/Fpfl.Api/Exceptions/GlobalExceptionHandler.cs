@@ -1,5 +1,6 @@
 using Fpfl.Api.Responses;
 using Fpfl.Common.Exceptions;
+
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace Fpfl.Api.Exceptions;

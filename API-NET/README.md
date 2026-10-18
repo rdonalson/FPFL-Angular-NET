@@ -9,7 +9,7 @@ A clean, enterprise‑grade, modular .NET platform built with **.NET 10**, **ASP
 
 It replaces the original version's .NET Core 3.1 layered API, bringing over API‑JDK's response envelope, centralized error handling, sanitizers, and JWT auth with refresh‑token rotation.
 
-> ✅ **At parity with API‑JDK.** Auth, items, the initial amount, and the forecast ledger are all ported — with ownership checks, exact‑cent math, and recurrence fixes API‑JDK lacks. See [Project Status](#-project-status).
+> ✅ **At parity with API‑JDK, and past it.** Auth, items, the initial amount, and the forecast ledger are all ported — with ownership checks, exact‑cent math, and recurrence fixes API‑JDK lacks — plus **Debt Paydown**, a feature of its own. See [Project Status](#-project-status).
 
 ---
 
@@ -49,6 +49,7 @@ API-NET/
  │    ├── Fpfl.Items/      # Domain + persistence for items, initial amount, item types, time periods
  │    ├── Fpfl.Display/    # Forecast ledger: recurrence expanders + ledger builder
  │    └── Fpfl.Common/     # Shared exceptions and sanitization
+ ├── db/                   # SQL scripts for tables API-NET adds to the shared schema
  ├── tests/
  │    └── Fpfl.Api.Tests/  # xUnit tests
  ├── docs/                 # Architecture and ER diagrams
@@ -72,7 +73,7 @@ Inside each bounded context the folders follow the same layering: `Domain/` (ent
 - `InvalidModelStateResponseFactory` returns validation failures in the same envelope; `AuthEnvelopeEvents` does the same for JWT 401/403s
 - Owns the composition root: CORS, authentication/authorization, rate limiting, health checks, static landing page
 
-**Controllers:** `AuthController`, `UserRolesController`, `ItemsController`, `InitialAmountController`, `DisplayController`, `ItemTypesController`, `TimePeriodsController`, `ClientLogsController`
+**Controllers:** `AuthController`, `UserRolesController`, `ItemsController`, `InitialAmountController`, `DebtsController`, `DisplayController`, `ItemTypesController`, `TimePeriodsController`, `ClientLogsController`
 
 `AuthController`'s register also creates the new user's $0.00 initial amount (best effort — a failure there never fails the sign‑up).
 
@@ -91,6 +92,7 @@ Inside each bounded context the folders follow the same layering: `Domain/` (ent
 - Owns the domain model and invariants for `Item`, `ItemType`, and `TimePeriod`
 - `ItemRules` — every rule an item must meet in one place (instead of ten UI forms, as in UI‑TSX): name 1–150 characters, amount above 0 and rounded to cents, credit or debit only, and the right fields for its time period (real month/day pairs, weekdays 0–6, nth index 1–4 or −1). It returns a clean copy with only that period's fields set, because the ledger reads exactly that set
 - `ItemService` — a user reads and changes only their own items (someone else's answers 404 so ids can't be probed; admins reach all); the owner always comes from the access token, never the body
+- `DebtService` + `DebtRules` — Debt Paydown's tracked debts: only your own debits (each tracked once) and credits, balance $0–$1B, APR 0–100%, up to 20 allocations, and no credit more than 100% allocated across all your debts; someone else's debt answers 404
 - `InitialAmountService` — one starting balance per user (item type 3), created at $0.00 on registration or on first read, so the GET never 404s; amounts must be $0 or more
 - Ports‑and‑adapters split: domain `I*Repository` / `I*Service` interfaces, application services, EF Core repositories
 - Repositories translate PostgreSQL errors into domain exceptions — unique violations → `DuplicateItemException` (409), foreign‑key violations → `DomainValidationException` (400), anything else → `RepositoryException` (500)
@@ -101,7 +103,8 @@ Inside each bounded context the folders follow the same layering: `Domain/` (ent
 
 - Ten `IRecurrenceExpander`s, one per time period (one‑time, daily, weekly, every two weeks, bi‑monthly, monthly, quarterly, semi‑annual, annual, nth weekday), turn an item into its occurrence dates; `RecurrenceEngine` routes each item to its expander once, and `RecurrenceWindow` narrows the dates to the item's own date range
 - `LedgerBuilder` is pure (no database, no clock): one row per day with credit and debit sums, net, and a running balance starting from the initial amount, with that day's entries nested — sums are `decimal` so cents stay exact
-- `LedgerReadoutService` loads the user's items, enforces ownership and a 10‑year cap, and hands them to the builder
+- `PaydownCalculator` projects each tracked debt: from the entered balance, every occurrence of the debit's own payment and of each allocated credit (its percentage) reduces what's owed, interest (APR ÷ 12) is added at month ends, payments stop at $0, and it looks up to 30 years ahead for the payoff date. Allocations become `LedgerAdjustment`s — extra "Debt Paydown" debits in the main ledger
+- `LedgerReadoutService` loads the user's items and tracked debts, enforces ownership and a 10‑year cap, and hands them to the calculator and the builder
 - Replaces the original version's database stored procedure with tested application code, and fixes three API‑JDK bugs on the way: Sunday items threw (`DayOfWeek.of(0)`), every‑two‑weeks dates shifted with the ledger's start date, and any user's ledger could be requested by id
 
 ### **Fpfl.Common** (mirrors `module-common-bc`)
@@ -164,7 +167,10 @@ Errors carry `"data": null` and a `correlationId` that matches the server log en
 | `POST /items` · `PUT /items/{id}` · `DELETE /items/{id}` | Signed in | Create / update / delete your item (validated by `ItemRules`) |
 | `GET /initial-amount/{userId}` | Signed in | Your starting balance — created at $0.00 if missing |
 | `POST /initial-amount` · `PUT /initial-amount/{id}` | Signed in | Create / change your starting balance |
-| `POST /display/ledger` | Signed in | The forecast: one row per day for `ledgerStartDate`–`ledgerEndDate` (≤ 10 years) |
+| `GET /debts` · `GET /debts/{id}` | Signed in | Your tracked debts with their allocations |
+| `POST /debts` · `PUT /debts/{id}` · `DELETE /debts/{id}` | Signed in | Track a debit / change its balance, APR, date and allocations / stop tracking it |
+| `POST /display/ledger` | Signed in | The forecast: one row per day for `ledgerStartDate`–`ledgerEndDate` (≤ 10 years), including "Debt Paydown" debits |
+| `POST /display/paydown` | Signed in | Same body: each tracked debt's daily balances, payments, allocations, interest, totals and payoff date |
 | `GET /item-types` · `GET /item-types/{id}` | Public | List / get item types |
 | `POST /item-types` · `PUT /item-types/{id}` · `DELETE /item-types/{id}` | **Admin** | Create / rename or change id / delete |
 | `GET /time-periods` · `GET /time-periods/{id}` | Public | List / get time periods |
@@ -220,6 +226,17 @@ Stores all user‑defined financial items — credits, debits, and each user's i
 | **annual_moy** / **annual_dom** | Annual month and day |
 | **nth_dow** / **nth_index** | Nth‑weekday pattern (index 1–4, or −1 for last) |
 | **date_range_req** | Whether a date range is required |
+
+---
+
+### **debts** · **debt_allocations** *(API‑NET only — [`db/001_debt_paydown.sql`](db/001_debt_paydown.sql))*
+
+Debt Paydown's tables. API‑JDK doesn't know them, and Hibernate's `update` mode leaves them alone. Deleting a debit deletes its debt; deleting a credit deletes its allocations (`ON DELETE CASCADE`).
+
+| **Table** | **Columns** |
+| --------- | ----------- |
+| **debts** | `id`, `user_id`, `fk_item` → `items.id` (the debit, unique), `balance` numeric(14,2) ≥ 0, `apr` numeric(6,3) 0–100, `balance_date`, `created_at` |
+| **debt_allocations** | `id`, `fk_debt` → `debts.id`, `fk_credit_item` → `items.id`, `percent` numeric(5,2) in (0, 100]; unique per (debt, credit) |
 
 ---
 
@@ -283,6 +300,7 @@ Application accounts used by `Fpfl.Auth` and referenced by items.
 ## **🔗 Relationships**
 
 - `items.fk_item_type` → `item_types.id` · `items.fk_time_period` → `time_periods.id` · `items.user_id` → `users.user_id`
+- `debts.fk_item` → `items.id` · `debt_allocations.fk_debt` → `debts.id` · `debt_allocations.fk_credit_item` → `items.id`
 - `user_roles.user_id` → `users.id` · `user_roles.role_id` → `roles.id`
 - `refresh_tokens.user_id` → `users.id`
 
@@ -290,7 +308,17 @@ Application accounts used by `Fpfl.Auth` and referenced by items.
 
 ## **🧩 ER Diagram**
 
-![Entity Relationship Diagram](docs/FPFL-ER.png)
+### Items (`ItemsDbContext`)
+
+`items` with its lookups `item_types` and `time_periods`, plus Debt Paydown's `debts` (one per tracked debit) and `debt_allocations` (each pointing at a debt and a credit item).
+
+![Items entity relationship diagram](docs/FPFL-ER-Item.png)
+
+### Auth (`AuthDbContext`)
+
+`users`, with `user_roles` joining them to `roles`, and their `refresh_tokens`.
+
+![Auth entity relationship diagram](docs/FPFL-ER-Auth.png)
 
 ---
 
@@ -392,7 +420,9 @@ dotnet test
 - [`ItemServiceTests`](tests/Fpfl.Api.Tests/ItemServiceTests.cs) · [`InitialAmountServiceTests`](tests/Fpfl.Api.Tests/InitialAmountServiceTests.cs) — ownership, owner from the token, auto‑created initial amount
 - [`RecurrenceEngineTests`](tests/Fpfl.Api.Tests/RecurrenceEngineTests.cs) — each period's dates, month‑end and leap‑year clamping, Sunday, every‑two‑weeks anchoring, item date ranges
 - [`LedgerBuilderTests`](tests/Fpfl.Api.Tests/LedgerBuilderTests.cs) — running balance, day ordering, exact cents, ownership and range limits
-- [`DisplayMapperTests`](tests/Fpfl.Api.Tests/DisplayMapperTests.cs) — the ledger JSON matches API‑JDK's shape field by field
+- [`DisplayMapperTests`](tests/Fpfl.Api.Tests/DisplayMapperTests.cs) — the ledger JSON matches API‑JDK's shape field by field, and survives the response sanitizer with paydown entries
+- [`PaydownCalculatorTests`](tests/Fpfl.Api.Tests/PaydownCalculatorTests.cs) — allocations, capped last payment, the debit's own payment, monthly interest, same‑day order, windows before / after the balance date, payoff projection
+- [`DebtServiceTests`](tests/Fpfl.Api.Tests/DebtServiceTests.cs) — Debt Paydown rules, the 100%‑per‑credit cap, ownership, and the ledger deducting allocations
 
 ---
 
@@ -413,6 +443,7 @@ The goal is the same feature set as [API‑JDK](https://github.com/rdonalson/FPF
 | Items (credits / debits with recurrence) | ✅ Done |
 | Initial amount (auto‑created at registration and first read) | ✅ Done |
 | Ledger readout + recurrence expanders (`Fpfl.Display`) | ✅ Done |
+| Debt Paydown — `/debts`, `/display/paydown`, ledger deductions *(new)* | ✅ Done |
 
 ---
 
@@ -423,7 +454,7 @@ The goal is the same feature set as [API‑JDK](https://github.com/rdonalson/FPF
 - Use `Fpfl.Common` sparingly — only for true cross‑cutting concerns
 - Sanitize user‑supplied strings through the sanitizer (`[StrictText]` / `[LenientText]` / `INoSanitize`) rather than ad‑hoc cleanup
 - Take the user id from the access token's claims, never from the request body
-- Don't add EF Core migrations — the schema is shared with API‑JDK
+- Don't add EF Core migrations — the schema is shared with API‑JDK. New tables go in a numbered, re‑runnable script in [`db/`](db), run against local and Azure databases before the code that uses them is deployed
 - Never commit `appsettings.*.json` secrets, `.env.docker`, or a real signing key
 - If Visual Studio breaks on domain exceptions while debugging, they are expected — the global handler turns them into 4xx responses (adjust Exception Settings or continue)
 

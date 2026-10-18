@@ -7,7 +7,7 @@ It replaces the original version's NgModule/NgRx front end, keeping the same pro
 
 Live at <https://ui-ng.ledger-finance.com> · API at <https://api-net.ledger-finance.com>
 
-> 🚧 **Nearly at parity.** Everything in UI-TSX is here — credits and debits, the initial amount, and the forecast with its chart and ledger — plus an **Export to Excel** UI-TSX doesn't have. Only the admin status page remains. See [Project Status](#-project-status).
+> 🚧 **Nearly at parity, and past it.** Everything in UI-TSX is here — credits and debits, the initial amount, and the forecast with its chart and ledger — plus two things UI-TSX doesn't have: **Export to Excel** and **Debt Paydown**. Only the admin status page remains. See [Project Status](#-project-status).
 
 ---
 
@@ -55,7 +55,8 @@ UI-NG/
  │    │    │    ├── item-types/  # list + admin add / edit / delete
  │    │    │    ├── time-periods/# list + admin add / edit / delete
  │    │    │    ├── item-detail/ # credits & debits (list, period picker, edit) + initial amount
- │    │    │    ├── display/     # forecast: date range, summary, chart, ledger, Excel export
+ │    │    │    ├── debt-paydown/# tracked debts and the credits allocated to them
+ │    │    │    ├── display/     # forecast: date range, summary, chart, ledger, paydown tabs, Excel export
  │    │    │    ├── admin/       # status page (scaffolded)
  │    │    │    └── docs/        # docs page (scaffolded)
  │    │    ├── app.config.ts     # Providers (replaces AppModule)
@@ -135,7 +136,8 @@ Features read data with **`httpResource`** inside a small `data-access` service 
 | `/credits/new` · `/debits/new` | Authenticated | Pick a time period for a new item |
 | `/credits/new/:periodId` · `/debits/new/:periodId` | Authenticated | New item for that period |
 | `/credits/:id/edit` · `/debits/:id/edit` | Authenticated | Edit an item |
-| `/display` | Authenticated | The forecast — summary, chart, ledger, Excel export |
+| `/debt-paydown` | Authenticated | Debt Paydown — track debts, set balances / APR, allocate credits |
+| `/display` | Authenticated | The forecast — summary, chart, ledger, paydown chart / ledger, Excel export |
 | `**` | Public | Not found |
 
 Every route is lazy‑loaded with `loadComponent`, and route `data` / params reach components as inputs (`withComponentInputBinding`) — the credit and debit pages are one set of components told which item type they show. The admin status page is scaffolded under `features/admin` and will be routed next.
@@ -160,12 +162,17 @@ Implemented today:
   - **Period picker** — ten cards, one per time period, each with an example
   - **Edit** — one reactive form for all ten periods; choosing a period shows only its fields, and the same rules as the API's `ItemRules` run before saving
   - **Initial amount** — the starting balance as a card with inline edit; the API creates $0.00 automatically, so there's no "create" step
+- **`debt-paydown`** — Debt Paydown setup:
+  - **Cards** per tracked debt: its payment and schedule, what's owed (as of a date, with APR), and each allocation ("70% of Paycheck · $1,400.00 each")
+  - **Editor** — choose an untracked debit, enter balance / as‑of date / APR, add allocations; each row shows the dollars per occurrence live and how much of that credit other debts already take
+  - The same rules as the API's `DebtRules` run before saving, so "Paycheck is already 70% allocated…" shows without a round trip
 - **`display`** — the forecast:
   - **Date range** with quick ranges (30 days → 5 years); runs on arrival with today + 90 days
   - **Summary tiles** — starting, credits, debits, lowest (with date) and ending balance, plus a warning when the balance drops below $0
   - **Chart** — the balance over time, and each day's credits above zero / debits below; colors checked for color‑blind readers
   - **Ledger** — one row per day with expandable items, an "Only days with activity" switch, and expand / collapse all
-  - **Export to Excel** — a port of the original Angular app's export: the same ledger as a workbook, each day's items in a collapsed outline group that Excel's +/– buttons open, with real dates and accounting‑formatted amounts
+  - **Paydown chart / Paydown ledger** — shown when debts are tracked: a card per debt (owed, paid, interest, payoff date), every debt's balance as a stepped line in its own fixed color, and every payment, allocation and interest charge with the balance left, filterable by debt
+  - **Export to Excel** — a port of the original Angular app's export (plus a **Debt Paydown** sheet when debts are tracked): the same ledger as a workbook, each day's items in a collapsed outline group that Excel's +/– buttons open, with real dates and accounting‑formatted amounts
 
 ---
 
@@ -187,6 +194,7 @@ The goal is the same feature set as [UI-TSX](https://github.com/rdonalson/FPFL-R
 | Initial amount | ✅ Done |
 | Forecasted ledger table + chart with date‑range selection | ✅ Done |
 | Ledger download to Excel with expandable rows | ✅ Done (not in UI-TSX) |
+| Debt Paydown — setup page, paydown chart / ledger tabs, Excel sheet | ✅ Done (not in UI-TSX) |
 | Admin status page (UI + API health) | 🔜 Planned |
 | Client error forwarding to `/client-logs` | 🔜 Planned |
 
