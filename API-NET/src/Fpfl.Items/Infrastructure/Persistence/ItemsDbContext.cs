@@ -1,4 +1,5 @@
 using Fpfl.Items.Domain.Entities;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace Fpfl.Items.Infrastructure.Persistence;
@@ -19,6 +20,10 @@ public sealed class ItemsDbContext(DbContextOptions<ItemsDbContext> options) : D
     public DbSet<TimePeriod> TimePeriods => Set<TimePeriod>();
 
     public DbSet<Item> Items => Set<Item>();
+
+    public DbSet<Debt> Debts => Set<Debt>();
+
+    public DbSet<DebtAllocation> DebtAllocations => Set<DebtAllocation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

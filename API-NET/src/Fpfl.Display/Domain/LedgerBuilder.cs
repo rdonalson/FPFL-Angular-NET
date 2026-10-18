@@ -1,8 +1,9 @@
 using Fpfl.Display.Domain.Models;
+using Fpfl.Display.Domain.Paydown;
 using Fpfl.Display.Domain.Recurrence;
+using Fpfl.Items.Application.Services;
 using Fpfl.Items.Domain;
 using Fpfl.Items.Domain.Entities;
-using Fpfl.Items.Application.Services;
 
 namespace Fpfl.Display.Domain;
 
@@ -16,7 +17,15 @@ namespace Fpfl.Display.Domain;
 /// </remarks>
 public static class LedgerBuilder
 {
-    public static IReadOnlyList<LedgerDay> Build(IEnumerable<Item> items, DateWindow window)
+    /// <summary>Item-type name shown on the main ledger for money sent to a tracked debt.</summary>
+    public const string PaydownTypeName = "Debt Paydown";
+
+    /// <param name="adjustments">
+    ///     Extra debits that aren't items of their own: money credits send to tracked debts
+    ///     (see <see cref="PaydownCalculator" />). Listed after the day's debits.
+    /// </param>
+    public static IReadOnlyList<LedgerDay> Build(
+        IEnumerable<Item> items, DateWindow window, IEnumerable<LedgerAdjustment>? adjustments = null)
     {
         var all = items.ToList();
 
@@ -27,6 +36,8 @@ public static class LedgerBuilder
             .Where(i => i.ItemTypeId is ItemRules.Credit or ItemRules.Debit)
             .SelectMany(item => RecurrenceEngine.Occurrences(item, window).Select(date => (Date: date, Item: item)))
             .ToLookup(o => o.Date, o => o.Item);
+
+        var extras = (adjustments ?? Enumerable.Empty<LedgerAdjustment>()).Where(a => window.Contains(a.Date)).ToLookup(a => a.Date);
 
         var days = new List<LedgerDay>(window.Days);
         var rollupKey = 1;
@@ -59,6 +70,23 @@ public static class LedgerBuilder
                     ItemTypeName = item.ItemType?.Name,
                     PeriodName = item.TimePeriod?.Name,
                     Name = item.Name,
+                    Amount = amount,
+                });
+            }
+
+            foreach (var extra in extras[date].OrderBy(a => a.Name).ThenBy(a => a.Detail))
+            {
+                var amount = -Math.Abs(extra.Amount);
+                day.DebitSummary += amount;
+                day.Entries.Add(new LedgerEntry
+                {
+                    ItemKey = itemKey++,
+                    ItemId = extra.ItemId,
+                    OccurrenceDate = date,
+                    ItemTypeId = ItemRules.Debit,
+                    ItemTypeName = PaydownTypeName,
+                    PeriodName = extra.Detail,
+                    Name = extra.Name,
                     Amount = amount,
                 });
             }

@@ -1,5 +1,6 @@
 using Fpfl.Api.Dtos.Display;
 using Fpfl.Display.Domain.Models;
+using Fpfl.Display.Domain.Paydown;
 
 namespace Fpfl.Api.Mappers;
 
@@ -8,6 +9,36 @@ public sealed class DisplayMapper
 {
     public IReadOnlyList<LedgerDayResponse> ToResponse(IReadOnlyList<LedgerDay> days) =>
         days.Select(ToResponse).ToList();
+
+    public IReadOnlyList<DebtPaydownResponse> ToResponse(IReadOnlyList<DebtPaydown> debts) =>
+        debts.Select(ToResponse).ToList();
+
+    public DebtPaydownResponse ToResponse(DebtPaydown debt) => new(
+        debt.DebtId,
+        debt.DebtItemId,
+        debt.Name,
+        debt.Apr,
+        debt.EnteredBalance,
+        debt.BalanceDate,
+        debt.StartingBalance,
+        debt.EndingBalance,
+        debt.TotalPaid,
+        debt.TotalInterest,
+        debt.PayoffDate,
+        debt.Balances,
+        debt.Events.Select(e => new PaydownEventResponse(
+            e.Date,
+            e.Kind switch
+            {
+                PaydownEventKind.Payment => "payment",
+                PaydownEventKind.Allocation => "allocation",
+                _ => "interest",
+            },
+            e.SourceItemId,
+            e.SourceName,
+            e.Percent,
+            e.Amount,
+            e.BalanceAfter)).ToList());
 
     public LedgerDayResponse ToResponse(LedgerDay day) => new(
         day.RollupKey,

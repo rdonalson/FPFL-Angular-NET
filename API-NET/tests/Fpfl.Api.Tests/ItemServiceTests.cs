@@ -107,7 +107,11 @@ public sealed class ItemServiceTests
 
     private static Item MonthlyDraft(string name = "Side Gig") => new()
     {
-        Name = name, Amount = 250, ItemTypeId = Credit, TimePeriodId = 6, MonthlyDom = 15,
+        Name = name,
+        Amount = 250,
+        ItemTypeId = Credit,
+        TimePeriodId = 6,
+        MonthlyDom = 15,
     };
 
     [Fact]

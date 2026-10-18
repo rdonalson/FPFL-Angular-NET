@@ -1,5 +1,6 @@
 using Fpfl.Auth.Domain.Entities;
 using Fpfl.Auth.Domain.Repositories;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace Fpfl.Auth.Infrastructure.Persistence.Repositories;

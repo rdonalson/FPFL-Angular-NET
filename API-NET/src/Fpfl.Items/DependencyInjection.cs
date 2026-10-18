@@ -3,6 +3,7 @@ using Fpfl.Items.Domain.Repositories;
 using Fpfl.Items.Domain.Services;
 using Fpfl.Items.Infrastructure.Persistence;
 using Fpfl.Items.Infrastructure.Persistence.Repositories;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -29,6 +30,9 @@ public static class DependencyInjection
         services.AddScoped<IItemRepository, ItemRepository>();
         services.AddScoped<IItemService, ItemService>();
         services.AddScoped<IInitialAmountService, InitialAmountService>();
+
+        services.AddScoped<IDebtRepository, DebtRepository>();
+        services.AddScoped<IDebtService, DebtService>();
 
         services.TryAddSingleton(TimeProvider.System);
 

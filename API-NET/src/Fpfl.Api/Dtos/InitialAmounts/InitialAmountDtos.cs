@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+
 using Fpfl.Api.Dtos.ItemTypes;
 
 namespace Fpfl.Api.Dtos.InitialAmounts;

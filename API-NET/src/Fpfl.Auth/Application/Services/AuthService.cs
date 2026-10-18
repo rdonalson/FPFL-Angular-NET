@@ -3,6 +3,7 @@ using Fpfl.Auth.Application.Security;
 using Fpfl.Auth.Domain.Entities;
 using Fpfl.Auth.Domain.Repositories;
 using Fpfl.Common.Exceptions;
+
 using Microsoft.Extensions.Options;
 
 namespace Fpfl.Auth.Application.Services;

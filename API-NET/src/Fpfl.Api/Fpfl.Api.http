@@ -331,3 +331,53 @@ Content-Type: application/json
   "ledgerStartDate": "2026-10-17",
   "ledgerEndDate": "2026-11-17"
 }
+
+# ---------------------------------------------------------------------------
+# Debt Paydown (signed in). Run db/001_debt_paydown.sql first.
+# itemId = one of your debits; creditItemId = one of your credits.
+# ---------------------------------------------------------------------------
+
+### My tracked debts
+GET {{Fpfl.Api_HostAddress}}/debts
+Authorization: Bearer {{accessToken}}
+
+### Track a debit: $4,500 owed at 24.99% APR, with 30% of a paycheck and 50% of a bonus
+POST {{Fpfl.Api_HostAddress}}/debts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "itemId": 1,
+  "balance": 4500,
+  "apr": 24.99,
+  "allocations": [
+    { "creditItemId": 2, "percent": 30 },
+    { "creditItemId": 3, "percent": 50 }
+  ]
+}
+
+### Change the balance and allocations (use the id from the POST)
+PUT {{Fpfl.Api_HostAddress}}/debts/1
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "balance": 4200,
+  "apr": 24.99,
+  "balanceDate": "2026-11-01",
+  "allocations": [ { "creditItemId": 2, "percent": 40 } ]
+}
+
+### Stop tracking it
+DELETE {{Fpfl.Api_HostAddress}}/debts/1
+Authorization: Bearer {{accessToken}}
+
+### The paydown over the next 90 days
+POST {{Fpfl.Api_HostAddress}}/display/paydown
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "ledgerStartDate": "2026-10-18",
+  "ledgerEndDate": "2027-01-16"
+}

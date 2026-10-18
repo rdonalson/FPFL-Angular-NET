@@ -1,4 +1,5 @@
 using Fpfl.Auth.Domain.Entities;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace Fpfl.Auth.Infrastructure.Persistence;

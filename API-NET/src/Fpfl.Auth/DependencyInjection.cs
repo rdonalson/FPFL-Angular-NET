@@ -4,6 +4,7 @@ using Fpfl.Auth.Domain.Repositories;
 using Fpfl.Auth.Infrastructure.Persistence;
 using Fpfl.Auth.Infrastructure.Persistence.Repositories;
 using Fpfl.Auth.Infrastructure.Security;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

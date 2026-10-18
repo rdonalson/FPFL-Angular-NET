@@ -1,5 +1,6 @@
 using Fpfl.Display.Application.Services;
 using Fpfl.Display.Domain.Services;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fpfl.Display;

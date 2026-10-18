@@ -1,5 +1,6 @@
 using Fpfl.Common.Exceptions;
 using Fpfl.Common.Sanitization;
+
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Fpfl.Api.Tests;
