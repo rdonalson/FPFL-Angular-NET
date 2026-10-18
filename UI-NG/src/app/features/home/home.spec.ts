@@ -26,7 +26,7 @@ describe('Home', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('p-galleria')).toBeTruthy();
     expect(el.querySelector<HTMLAnchorElement>('.home__guide')?.getAttribute('href')).toBe(
-      'media/financial-planner-guide.pdf',
+      'media/fpfl-user-guide.pdf',
     );
   });
 

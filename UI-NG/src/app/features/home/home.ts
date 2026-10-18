@@ -24,5 +24,5 @@ export class Home {
 
   // Galleria's [value] input is a mutable any[], so hand it a copy of the readonly list.
   protected readonly images: GalleryImage[] = [...GALLERY_IMAGES];
-  protected readonly guideUrl = 'media/financial-planner-guide.pdf';
+  protected readonly guideUrl = 'media/fpfl-user-guide.pdf';
 }
