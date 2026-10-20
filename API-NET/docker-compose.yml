@@ -9,7 +9,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
     ports:
-      - "5132:8080"
+      - "8100:8080" # API-NET -> http://localhost:8100
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped

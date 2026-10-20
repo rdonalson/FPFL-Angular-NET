@@ -387,7 +387,7 @@ The [`Dockerfile`](Dockerfile) is a two‑stage build: `mcr.microsoft.com/dotnet
 docker compose up --build
 ```
 
-`docker-compose.yml` reads `.env.docker` (Git‑ignored) and maps `5132:8080`; PostgreSQL on the host is reached through `host.docker.internal`.
+`docker-compose.yml` reads `.env.docker` (Git‑ignored) and maps `8100:8080` (API at <http://localhost:8100>); PostgreSQL on the host is reached through `host.docker.internal`.
 
 ---
 

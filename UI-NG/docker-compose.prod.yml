@@ -8,5 +8,5 @@ services:
     image: fpfluingimg:prod
     container_name: fpfl-ui-ng
     ports:
-      - "4280:8080"
+      - "8000:8080" # UI-NG -> http://localhost:8000
     restart: unless-stopped
