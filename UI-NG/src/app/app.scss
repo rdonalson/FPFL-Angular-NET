@@ -14,12 +14,21 @@
   }
 }
 
+// Sidebar (desktop, signed in) + page. Below 992px the sidebar becomes a drawer.
+.app-body {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
 .app-main {
   flex: 1;
+  min-width: 0;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 2rem 1.5rem;
   box-sizing: border-box;
 }
 

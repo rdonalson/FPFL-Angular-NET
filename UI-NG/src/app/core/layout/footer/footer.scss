@@ -1,9 +1,11 @@
 .footer {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 0.5rem;
   padding: 1rem;
   border-top: 1px solid var(--fpfl-border);
+  background: var(--fpfl-surface);
   color: var(--fpfl-muted);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }

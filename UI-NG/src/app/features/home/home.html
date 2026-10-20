@@ -1,86 +1,106 @@
-<section class="home">
-  <div class="home__gallery">
-    <p-galleria
-      [value]="images"
-      [circular]="true"
-      [autoPlay]="true"
-      [transitionInterval]="5000"
-      [showThumbnails]="false"
-      [showIndicators]="true"
-      [showIndicatorsOnItem]="true"
-      [changeItemOnIndicatorHover]="true"
-      [showItemNavigators]="true"
-      [showItemNavigatorsOnHover]="true"
-    >
-      <ng-template #item let-image>
-        <img class="home__slide" [src]="image.src" [alt]="image.alt" />
-      </ng-template>
-    </p-galleria>
-  </div>
-
-  <aside class="home__info">
-    <h1 class="home__heading">Plan ahead with confidence</h1>
-    <ul class="home__points">
-      <li>
-        Keep your checking or savings account solvent out to any future point in time.
-      </li>
-      <li>
-        Enter your expenses and income with a starting amount, then choose a time frame to see
-        your balance at the end of it.
-      </li>
-      <li>View the forecast as a chart or as a ledger.</li>
-    </ul>
-
-    <a class="home__guide" [href]="guideUrl" target="_blank" rel="noopener">
-      <i class="pi pi-file-pdf" aria-hidden="true"></i>
-      FPFL User Guide
-    </a>
-
-    <div class="home__start">
+<div class="home">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero__copy">
       @if (auth.isAuthenticated()) {
-        <p class="home__start-text">Signed in as {{ auth.displayName() }}.</p>
-        <div class="home__start-actions">
-          <a routerLink="/initial-amount" class="home__start-link">
-            <i class="pi pi-wallet" aria-hidden="true"></i>
-            Initial Amount
-          </a>
-          <a routerLink="/credits" class="home__start-link">
-            <i class="pi pi-arrow-down-left" aria-hidden="true"></i>
-            Credits
-          </a>
-          <a routerLink="/debits" class="home__start-link">
-            <i class="pi pi-arrow-up-right" aria-hidden="true"></i>
-            Debits
-          </a>
-          <a routerLink="/debt-paydown" class="home__start-link">
-            <i class="pi pi-credit-card" aria-hidden="true"></i>
-            Debt Paydown
-          </a>
-          <a routerLink="/display" class="home__start-link">
-            <i class="pi pi-chart-line" aria-hidden="true"></i>
-            Display
-          </a>
-          <a routerLink="/item-types" class="home__start-link">
-            <i class="pi pi-tags" aria-hidden="true"></i>
-            Item Types
-          </a>
-          <a routerLink="/time-periods" class="home__start-link">
-            <i class="pi pi-calendar" aria-hidden="true"></i>
-            Time Periods
-          </a>
-        </div>
+        <span class="hero__chip">{{ greeting() }}</span>
       } @else {
-        <p class="home__start-text">Try it with the guest account, or sign in with your own.</p>
-        <div class="home__start-actions">
+        <span class="hero__chip">Financial Planner · Forecast · Ledger</span>
+      }
+
+      <h1 class="hero__title">See where your money is headed.</h1>
+      <p class="hero__lead">
+        Set a starting balance, add your recurring income and expenses, then forecast your balance
+        out to any future date, as a chart or a day-by-day ledger.
+      </p>
+
+      <div class="hero__actions">
+        @if (auth.isAuthenticated()) {
+          <a routerLink="/display" class="hero__btn hero__btn--primary">
+            Open forecast <i class="pi pi-arrow-right" aria-hidden="true"></i>
+          </a>
+        } @else {
           <p-button
-            label="Guest Login"
+            label="Try it as a guest"
             icon="pi pi-user"
             [loading]="ui.guestLoading()"
             (onClick)="ui.loginAsGuest()"
           />
-          <p-button label="Login" icon="pi pi-sign-in" [outlined]="true" (onClick)="ui.openLogin()" />
-        </div>
+          <p-button
+            label="Login"
+            icon="pi pi-sign-in"
+            [outlined]="true"
+            (onClick)="ui.openLogin()"
+          />
+        }
+        <a
+          class="hero__btn hero__btn--ghost hero__guide"
+          [href]="guideUrl"
+          target="_blank"
+          rel="noopener"
+        >
+          <i class="pi pi-file-pdf" aria-hidden="true"></i> User Guide
+        </a>
+      </div>
+    </div>
+
+    <div class="hero__gallery">
+      <p-galleria
+        [value]="images"
+        [circular]="true"
+        [autoPlay]="true"
+        [transitionInterval]="5000"
+        [showThumbnails]="false"
+        [showIndicators]="true"
+        [showIndicatorsOnItem]="true"
+        [changeItemOnIndicatorHover]="true"
+        [showItemNavigators]="true"
+        [showItemNavigatorsOnHover]="true"
+      >
+        <ng-template #item let-image>
+          <img class="hero__slide" [src]="image.src" [alt]="image.alt" />
+        </ng-template>
+      </p-galleria>
+    </div>
+  </section>
+
+  <!-- Quick actions -->
+  <section class="block" aria-labelledby="qa-title">
+    <h2 id="qa-title" class="block__title">Quick actions</h2>
+    @if (!auth.isAuthenticated()) {
+      <p class="block__hint">
+        <i class="pi pi-lock" aria-hidden="true"></i> You'll be asked to log in first, or try it as
+        a guest.
+      </p>
+    }
+    <div class="cards">
+      @for (action of userActions; track action.to) {
+        <a class="card" [routerLink]="action.to">
+          <span class="card__icon" [class]="'tone-' + action.tone">
+            <i [class]="action.icon" aria-hidden="true"></i>
+          </span>
+          <span class="card__title">{{ action.label }}</span>
+          <span class="card__desc">{{ action.description }}</span>
+        </a>
       }
     </div>
-  </aside>
-</section>
+  </section>
+
+  <!-- Admin -->
+  @if (auth.isAdmin()) {
+    <section class="block" aria-labelledby="admin-title">
+      <div class="block__head">
+        <h2 id="admin-title" class="block__title">Admin</h2>
+        <span class="block__badge">ROLE_ADMIN</span>
+      </div>
+      <div class="cards cards--compact">
+        @for (action of adminActions; track action.to) {
+          <a class="card card--compact" [routerLink]="action.to">
+            <i [class]="action.icon" aria-hidden="true"></i>
+            <span class="card__title">{{ action.label }}</span>
+          </a>
+        }
+      </div>
+    </section>
+  }
+</div>
