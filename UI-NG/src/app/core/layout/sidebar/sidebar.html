@@ -1,12 +1,4 @@
-<p-drawer
-  [visible]="visible()"
-  (visibleChange)="visibleChange($event)"
-  position="left"
-  [modal]="true"
-  [blockScroll]="true"
-  header="Menu"
-  styleClass="sidebar"
->
+<ng-template #nav>
   <nav class="sidebar__nav" aria-label="Main">
     @for (section of sections(); track section.label) {
       <div class="sidebar__section">
@@ -33,10 +25,30 @@
   </nav>
 
   <p class="sidebar__user">
-    <i class="pi pi-user" aria-hidden="true"></i>
-    {{ auth.displayName() }}
+    <span class="sidebar__initials" aria-hidden="true">{{ initials() }}</span>
+    <span class="sidebar__name">{{ auth.displayName() }}</span>
     @if (auth.isAdmin()) {
       <span class="sidebar__role">Admin</span>
     }
   </p>
+</ng-template>
+
+<!-- Desktop (992px and up): always-visible side panel -->
+@if (auth.isAuthenticated()) {
+  <aside class="sidebar-panel">
+    <ng-container [ngTemplateOutlet]="nav" />
+  </aside>
+}
+
+<!-- Tablets and phones: slide-out drawer opened from the top bar -->
+<p-drawer
+  [visible]="visible()"
+  (visibleChange)="visibleChange($event)"
+  position="left"
+  [modal]="true"
+  [blockScroll]="true"
+  header="Menu"
+  styleClass="sidebar"
+>
+  <ng-container [ngTemplateOutlet]="nav" />
 </p-drawer>

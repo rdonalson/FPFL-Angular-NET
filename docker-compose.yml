@@ -1,6 +1,6 @@
 # Whole stack from the repo root:  docker compose up --build
-#   UI  -> http://localhost:4280
-#   API -> http://localhost:5132  (Swagger at /swagger-ui, health at /health)
+#   UI  -> http://localhost:8000
+#   API -> http://localhost:8100  (Swagger at /swagger-ui, health at /health)
 # Needs API-NET/.env.docker. PostgreSQL stays on the host (host.docker.internal).
 # The browser calls the API directly, so API_URL is the host-published API address.
 services:
@@ -12,7 +12,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
     ports:
-      - "5132:8080"
+      - "8100:8080"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
@@ -21,11 +21,11 @@ services:
     build:
       context: ./UI-NG
       args:
-        API_URL: http://localhost:5132
+        API_URL: http://localhost:8100
     image: fpfluingimg
     container_name: fpfl-ui-ng
     ports:
-      - "4280:8080"
+      - "8000:8080"
     depends_on:
       - api
     restart: unless-stopped

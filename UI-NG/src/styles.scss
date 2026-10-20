@@ -2,15 +2,33 @@
    PrimeIcons comes from angular.json "styles". */
 
 :root {
-  --fpfl-bg: #f5f7fa;
+  // "Polished Indigo" (design A): white chrome, cool grey ground, indigo accent.
+  --fpfl-bg: #f5f6fa;
   --fpfl-surface: #ffffff;
-  --fpfl-text: #1f2937;
-  --fpfl-muted: #4b5563;
-  --fpfl-border: #e5e7eb;
-  --fpfl-link: #2563eb;
-  --fpfl-header-bg: #1e293b;
-  --fpfl-header-fg: #ffffff;
-  --fpfl-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --fpfl-surface-alt: #f8f9fc;
+  --fpfl-text: #0f172a;
+  --fpfl-muted: #5b6475;
+  --fpfl-border: #e4e7ee;
+  --fpfl-border-strong: #d5d9e2;
+  --fpfl-link: #4338ca;
+  --fpfl-header-bg: #ffffff;
+  --fpfl-header-fg: #0f172a;
+  --fpfl-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+
+  --fpfl-accent: #4f46e5;
+  --fpfl-accent-strong: #3730a3;
+  --fpfl-accent-tint: #eef0ff;
+  --fpfl-credit: #1d5fb8;
+  --fpfl-credit-tint: #e8f1fd;
+  --fpfl-debit: #b54708;
+  --fpfl-debit-tint: #fdf0e6;
+  --fpfl-danger: #b42318;
+  --fpfl-success: #067647;
+  --fpfl-success-tint: #e7f6ee;
+
+  --fpfl-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --fpfl-font-display: 'Manrope', 'Inter', system-ui, sans-serif;
+  --fpfl-radius: 14px;
 }
 
 *,
@@ -32,8 +50,24 @@ body {
 }
 
 body {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--fpfl-font);
   background: var(--fpfl-bg);
   color: var(--fpfl-text);
   -webkit-font-smoothing: antialiased;
+}
+
+// Page headings use the display face.
+h1,
+h2 {
+  font-family: var(--fpfl-font-display);
+  letter-spacing: -0.015em;
+}
+
+// PrimeNG components take the UI face too (Aura defaults to its own stack).
+:root {
+  --p-font-family: var(--fpfl-font);
+}
+
+:focus-visible {
+  outline-color: var(--fpfl-accent);
 }

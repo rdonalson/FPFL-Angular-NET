@@ -441,8 +441,8 @@ docker compose up --build
 
 | Service | URL |
 | ------- | --- |
-| UI | <http://localhost:4280> |
-| API | <http://localhost:5132> (Swagger at `/swagger-ui`, health at `/health`) |
+| UI | <http://localhost:8000> |
+| API | <http://localhost:8100> (Swagger at `/swagger-ui`, health at `/health`) |
 
 Each project also has its own `docker-compose.yml`; UI‑NG adds `docker-compose.prod.yml` for an image pointed at the public API.
 

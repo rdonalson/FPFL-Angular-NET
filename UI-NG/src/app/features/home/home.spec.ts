@@ -25,13 +25,13 @@ describe('Home', () => {
   it('should render the galleria and the guide link', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('p-galleria')).toBeTruthy();
-    expect(el.querySelector<HTMLAnchorElement>('.home__guide')?.getAttribute('href')).toBe(
+    expect(el.querySelector<HTMLAnchorElement>('.hero__guide')?.getAttribute('href')).toBe(
       'media/fpfl-user-guide.pdf',
     );
   });
 
   it('offers guest login when signed out', () => {
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Guest Login');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Try it as a guest');
   });
 });
 

@@ -5,20 +5,25 @@
 </div>
 
 <app-topbar />
-<app-sidebar />
 
-<main class="app-main">
-  @if (auth.endedReason() === 'expired') {
-    <div class="app-notice">
-      <p-message severity="warn">
-        Your session expired.
-        <button type="button" class="app-notice__link" (click)="loginAgain()">Log in again</button>
-      </p-message>
-    </div>
-  }
+<div class="app-body">
+  <app-sidebar />
 
-  <router-outlet />
-</main>
+  <main class="app-main">
+    @if (auth.endedReason() === 'expired') {
+      <div class="app-notice">
+        <p-message severity="warn">
+          Your session expired.
+          <button type="button" class="app-notice__link" (click)="loginAgain()">
+            Log in again
+          </button>
+        </p-message>
+      </div>
+    }
+
+    <router-outlet />
+  </main>
+</div>
 
 <app-footer />
 

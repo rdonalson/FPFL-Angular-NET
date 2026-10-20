@@ -11,9 +11,12 @@
         <i class="pi pi-bars" aria-hidden="true"></i>
       </button>
     }
-    <a class="topbar__brand" routerLink="/">
-      <img class="topbar__avatar" src="images/avatar.jpg" alt="" width="36" height="36" />
-      <span class="topbar__title">{{ title }}</span>
+    <a class="topbar__brand" routerLink="/" aria-label="FPFL home">
+      <span class="topbar__mark" aria-hidden="true"><i class="pi pi-chart-line"></i></span>
+      <span class="topbar__titles">
+        <span class="topbar__title">FPFL</span>
+        <span class="topbar__subtitle">{{ title }}</span>
+      </span>
     </a>
   </div>
 
@@ -39,7 +42,7 @@
         icon="pi pi-sign-out"
         label="Logout"
         [text]="true"
-        styleClass="topbar__btn"
+        styleClass="topbar__btn topbar__btn--danger"
         ariaLabel="Logout"
         (onClick)="ui.logout()"
       />
@@ -56,8 +59,7 @@
       <p-button
         icon="pi pi-sign-in"
         label="Login"
-        [text]="true"
-        styleClass="topbar__btn"
+        styleClass="topbar__btn topbar__btn--primary"
         ariaLabel="Login"
         (onClick)="ui.openLogin()"
       />
@@ -71,7 +73,13 @@
       />
     }
 
-    <a class="topbar__repo" [href]="repoUrl" target="_blank" rel="noopener" title="View the code on GitHub">
+    <a
+      class="topbar__repo"
+      [href]="repoUrl"
+      target="_blank"
+      rel="noopener"
+      title="View the code on GitHub"
+    >
       <i class="pi pi-github" aria-hidden="true"></i>
       <span class="visually-hidden">View the code on GitHub</span>
     </a>

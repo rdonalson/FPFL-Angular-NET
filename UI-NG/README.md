@@ -68,7 +68,7 @@ UI-NG/
  │    └── styles.scss            # Global styles and design tokens
  ├── Dockerfile                  # Multi-stage build → unprivileged nginx
  ├── nginx.conf                  # SPA fallback, caching, /healthz
- ├── docker-compose.yml          # Local container run (API at localhost:5132)
+ ├── docker-compose.yml          # Local container run (API at localhost:8100)
  ├── docker-compose.prod.yml     # Image pointed at the public API
  ├── angular.json
  └── package.json
@@ -239,7 +239,7 @@ npm test
 [`nginx.conf`](nginx.conf) adds SPA fallback (`try_files … /index.html`), one‑year caching for hashed bundles, `no-cache` for `index.html`, gzip, basic security headers, and a `/healthz` probe endpoint.
 
 ```bash
-docker compose up --build                              # API at http://localhost:5132, UI at http://localhost:4280
+docker compose up --build                              # API at http://localhost:8100, UI at http://localhost:8000
 docker compose -f docker-compose.prod.yml up --build   # pointed at https://api-net.ledger-finance.com
 ```
 
