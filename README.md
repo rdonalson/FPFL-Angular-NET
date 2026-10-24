@@ -209,7 +209,63 @@ Ultimately this version will match every feature of [FPFL-React-Java](https://gi
 
 # 🗂️ Portfolio Samples
 
-A guided tour of the codebase. All links are relative to the repository root.
+A guided tour of the codebase. All links are relative to the repository root. The **Highlights** are the best place to start: the files that show how the system is designed, secured and tested. The full map follows them.
+
+## ⭐ Highlights
+
+### Back end — design and domain logic
+
+| File | What it shows |
+| ---- | ------------- |
+| [LedgerBuilder](API-NET/src/Fpfl.Display/Domain/LedgerBuilder.cs) · [RecurrenceEngine](API-NET/src/Fpfl.Display/Domain/Recurrence/RecurrenceEngine.cs) | The forecast engine as pure business logic (it replaced the original version's stored procedure): expands every item into dated occurrences and builds a running balance in exact `decimal` cents |
+| [EveryTwoWeeksExpander](API-NET/src/Fpfl.Display/Domain/Recurrence/EveryTwoWeeksExpander.cs) · [NthWeekdayExpander](API-NET/src/Fpfl.Display/Domain/Recurrence/NthWeekdayExpander.cs) · [CalendarMath](API-NET/src/Fpfl.Display/Domain/Recurrence/CalendarMath.cs) | Calendar edge cases: paydays anchored to the item's start, "the last Friday", the 31st in short months, Feb 29; one strategy class per pattern |
+| [PaydownCalculator](API-NET/src/Fpfl.Display/Domain/Paydown/PaydownCalculator.cs) | Debt payoff projection, a feature neither earlier version had: payments and allocated shares of income, monthly interest, a last payment cut to what's left, and a payoff date up to 30 years out |
+| [ItemRules](API-NET/src/Fpfl.Items/Domain/ItemRules.cs) · [DebtRules](API-NET/src/Fpfl.Items/Domain/DebtRules.cs) | Domain invariants kept out of controllers: each period's required fields, only your own items, no credit allocated past 100% |
+| [ItemRepository](API-NET/src/Fpfl.Items/Infrastructure/Persistence/Repositories/ItemRepository.cs) | EF Core mapped onto a schema another API owns (shared PostgreSQL with the Java version), behind a domain interface |
+| [Sanitizer](API-NET/src/Fpfl.Common/Sanitization/Sanitizer.cs) | Reflection-based input sanitizing driven by `[StrictText]` / `[LenientText]` attributes, safe for records, collections and cycles |
+| [GlobalExceptionHandler](API-NET/src/Fpfl.Api/Exceptions/GlobalExceptionHandler.cs) · [ApiResponseFactory](API-NET/src/Fpfl.Api/Responses/ApiResponseFactory.cs) | One response envelope for every success and error, with a correlation ID that matches the server log |
+
+### Back end — security and operations
+
+| File | What it shows |
+| ---- | ------------- |
+| [Fpfl.Auth/DependencyInjection](API-NET/src/Fpfl.Auth/DependencyInjection.cs) · [AuthOptions](API-NET/src/Fpfl.Auth/AuthOptions.cs) · [JwtTokenService](API-NET/src/Fpfl.Auth/Infrastructure/Security/JwtTokenService.cs) | JWT bearer setup that fails fast without a signing key; single-use refresh tokens stored only as SHA-256 hashes and rotated on every refresh |
+| [AuthService](API-NET/src/Fpfl.Auth/Application/Services/AuthService.cs) | Login, server-side guest login (the browser never sees the guest password), registration and password changes with BCrypt |
+| [ItemsController](API-NET/src/Fpfl.Api/Controllers/ItemsController.cs) · [AuthEnvelopeEvents](API-NET/src/Fpfl.Api/Security/AuthEnvelopeEvents.cs) | Role- and owner-based access: admin-only endpoints, everyone else limited to their own data; 401/403 in the same envelope |
+| [Program.cs](API-NET/src/Fpfl.Api/Program.cs) | The composition root: bounded contexts, CORS, rate limiting on anonymous writes, OpenAPI + Swagger UI, health and info endpoints |
+| [HealthResponseWriter](API-NET/src/Fpfl.Api/Health/HealthResponseWriter.cs) · [DiskSpaceHealthCheck](API-NET/src/Fpfl.Api/Health/DiskSpaceHealthCheck.cs) · [AppInfo](API-NET/src/Fpfl.Api/Health/AppInfo.cs) | `/health` and `/info` in Spring Boot Actuator's shape, so one status page can read either API |
+
+### Back end — tests (xUnit)
+
+| File | What it shows |
+| ---- | ------------- |
+| [RecurrenceEngineTests](API-NET/tests/Fpfl.Api.Tests/RecurrenceEngineTests.cs) · [PaydownCalculatorTests](API-NET/tests/Fpfl.Api.Tests/PaydownCalculatorTests.cs) | Calendar rules and payoff math pinned down: month ends, leap days, interest, payoff dates |
+| [AuthServiceTests](API-NET/tests/Fpfl.Api.Tests/AuthServiceTests.cs) · [InMemoryRepositories](API-NET/tests/Fpfl.Api.Tests/InMemoryRepositories.cs) | Services tested against in-memory repositories: token rotation, guest login, wrong passwords |
+| [HealthTests](API-NET/tests/Fpfl.Api.Tests/HealthTests.cs) | The Actuator-shaped health body, the disk-space threshold and the version split |
+
+### Front end — Angular 22 (standalone, zoneless, signals)
+
+| File | What it shows |
+| ---- | ------------- |
+| [app.config.ts](UI-NG/src/app/app.config.ts) · [app.routes.ts](UI-NG/src/app/app.routes.ts) | No NgModules: providers, functional interceptors, PrimeNG theme and lazy `loadComponent` routes with guards |
+| [AuthService](UI-NG/src/app/core/auth/auth.ts) · [auth-interceptor.ts](UI-NG/src/app/core/http/auth-interceptor.ts) | Session state as signals; on a 401 one shared refresh, then the request is retried |
+| [error-interceptor.ts](UI-NG/src/app/core/http/error-interceptor.ts) | Every failure normalized to one `ApiError` with the API's message and correlation ID |
+| [item-form.ts](UI-NG/src/app/features/item-detail/item-form.ts) · [schedule.ts](UI-NG/src/app/features/item-detail/schedule.ts) | One reactive form for all ten recurrence periods, with the API's rules run client-side, and plain-English schedules ("Every other Friday") |
+| [DisplayPage](UI-NG/src/app/features/display/display.ts) · [display-api.ts](UI-NG/src/app/features/display/data-access/display-api.ts) | Data loading with `httpResource` and `computed` signals instead of an NgRx store |
+| [ledger-export.ts](UI-NG/src/app/features/display/export/ledger-export.ts) | Excel export built in the browser with collapsible day groups, the library loaded only on demand |
+| [DebtPaydownPage](UI-NG/src/app/features/debt-paydown/debt-paydown.ts) | A complete feature: cards, an editor with live "dollars per paycheck" and "% left" hints, and the same rules as the API |
+| [status-api.ts](UI-NG/src/app/features/admin/status/status-api.ts) | Health probes that tell an API that's down apart from one that answered but was blocked by CORS |
+| [test-providers.ts](UI-NG/src/testing/test-providers.ts) · [auth-interceptor.spec.ts](UI-NG/src/app/core/http/auth-interceptor.spec.ts) · [ledger-export.spec.ts](UI-NG/src/app/features/display/export/ledger-export.spec.ts) | Vitest with the real interceptors against `HttpTestingController`, and logic kept in plain functions so it's tested without rendering |
+
+### DevOps
+
+| File | What it shows |
+| ---- | ------------- |
+| [build-push-api-net.yml](.github/workflows/build-push-api-net.yml) | Path-filtered CI/CD: `dotnet test` gates the build, then ACR push, manifests applied and a rollout that fails the run if unhealthy |
+| [api-net-deployment.yaml](k8s/api-net/api-net-deployment.yaml) · [setup-fpfl-net.sh](k8s/setup-fpfl-net.sh) | A dedicated tainted node pool, non-root containers, readiness and liveness probes, and secrets created by a re-runnable setup script |
+| [API-NET/Dockerfile](API-NET/Dockerfile) · [UI-NG/Dockerfile](UI-NG/Dockerfile) · [nginx.conf](UI-NG/nginx.conf) | Multi-stage builds; the UI served by unprivileged nginx with SPA fallback and long-cache hashed bundles |
+
+---
 
 ## Infrastructure
 
@@ -264,6 +320,7 @@ A guided tour of the codebase. All links are relative to the repository root.
 - [test-providers.ts](UI-NG/src/testing/test-providers.ts) — shared TestBed providers and envelope helpers
 - [auth.spec.ts](UI-NG/src/app/core/auth/auth.spec.ts) · [auth-interceptor.spec.ts](UI-NG/src/app/core/http/auth-interceptor.spec.ts) · [item-types.spec.ts](UI-NG/src/app/features/item-types/item-types.spec.ts) · [time-periods.spec.ts](UI-NG/src/app/features/time-periods/time-periods.spec.ts)
 - [item-list.spec.ts](UI-NG/src/app/features/item-detail/item-list/item-list.spec.ts) · [item-edit.spec.ts](UI-NG/src/app/features/item-detail/item-edit/item-edit.spec.ts) · [schedule.spec.ts](UI-NG/src/app/features/item-detail/schedule.spec.ts) · [display.spec.ts](UI-NG/src/app/features/display/display.spec.ts) · [ledger.spec.ts](UI-NG/src/app/features/display/ledger/ledger.spec.ts) · [ledger-export.spec.ts](UI-NG/src/app/features/display/export/ledger-export.spec.ts)
+- [status-api.spec.ts](UI-NG/src/app/features/admin/status/status-api.spec.ts) · [status.spec.ts](UI-NG/src/app/features/admin/status/status.spec.ts) · [docs.spec.ts](UI-NG/src/app/features/docs/docs.spec.ts) · [admin-guard.spec.ts](UI-NG/src/app/core/auth/admin-guard.spec.ts)
 
 ---
 
