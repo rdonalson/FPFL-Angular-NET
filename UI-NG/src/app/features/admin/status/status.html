@@ -1,1 +1,133 @@
-<p>status works!</p>
+<section class="page status">
+  <header class="page__header">
+    <div>
+      <a class="page__back" routerLink="/">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Home
+      </a>
+      <h1 class="page__title">System Status</h1>
+      <p class="page__subtitle">The UI's own checks and API-NET's health, refreshed every {{ pollSeconds }} seconds.</p>
+    </div>
+
+    <div class="page__actions status__actions">
+      <span class="status__checked" aria-live="polite">
+        @if (checkedAt(); as time) {
+          Checked {{ time }}
+        } @else {
+          Checking…
+        }
+      </span>
+      <p-button
+        [icon]="autoRefresh() ? 'pi pi-pause' : 'pi pi-play'"
+        [label]="autoRefresh() ? 'Auto ' + pollSeconds + 's' : 'Paused'"
+        severity="secondary"
+        [outlined]="true"
+        [ariaLabel]="autoRefresh() ? 'Pause auto refresh' : 'Resume auto refresh'"
+        (onClick)="toggleAutoRefresh()"
+      />
+      <p-button icon="pi pi-refresh" label="Refresh" [loading]="loading()" (onClick)="refresh()" />
+    </div>
+  </header>
+
+  @if (health(); as h) {
+    @if (!h.ok) {
+      <p-message [severity]="h.blocked ? 'warn' : 'error'" class="page__error">
+        <strong>
+          @if (h.blocked) {
+            The API is reachable, but this page can't read its health
+          } @else {
+            API check failed: {{ h.error ?? 'no response' }}
+          }
+        </strong>
+        <span class="status__probe">Probed {{ h.url }}</span>
+        @if (h.hint) {
+          <span class="status__probe">{{ h.hint }}</span>
+        }
+      </p-message>
+    }
+  }
+
+  <div class="status__cards">
+    <!-- UI -->
+    <article class="page__card status__card" aria-labelledby="ui-title">
+      <div class="status__card-head">
+        <h2 id="ui-title" class="status__card-title">UI</h2>
+        <p-tag [value]="online() ? 'UP' : 'DOWN'" [severity]="online() ? 'success' : 'danger'" />
+      </div>
+      <table class="status__table" aria-label="UI checks">
+        <thead>
+          <tr><th>Check</th><th>Status</th><th>Detail</th></tr>
+        </thead>
+        <tbody>
+          @for (row of uiChecks(); track row.name) {
+            <tr>
+              <td>{{ row.name }}</td>
+              <td><p-tag [value]="row.status" [severity]="severity(row.status)" /></td>
+              <td class="status__detail">{{ row.detail }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </article>
+
+    <!-- API -->
+    <article class="page__card status__card" aria-labelledby="api-title">
+      <div class="status__card-head">
+        <h2 id="api-title" class="status__card-title">API</h2>
+        <p-tag [value]="apiStatus()" [severity]="severity(apiStatus())" />
+      </div>
+
+      <ul class="status__facts" role="list">
+        <li><i class="pi pi-clock" aria-hidden="true"></i> {{ health() ? health()!.latencyMs + ' ms' : '—' }}</li>
+        <li>
+          <i class="pi pi-server" aria-hidden="true"></i>
+          {{ health()?.httpStatus ? 'HTTP ' + health()!.httpStatus : 'no response' }}
+        </li>
+        @if (build()?.version; as version) {
+          <li><i class="pi pi-tag" aria-hidden="true"></i> v{{ version }}@if (build()?.commit; as commit) { ({{ commit }}) }</li>
+        }
+        @if (buildTime(); as time) {
+          <li><i class="pi pi-calendar" aria-hidden="true"></i> Built {{ time }}</li>
+        }
+        @if (runtime(); as rt) {
+          <li><i class="pi pi-microchip" aria-hidden="true"></i> {{ rt.framework }}</li>
+          <li><i class="pi pi-globe" aria-hidden="true"></i> {{ rt.environment }}</li>
+        }
+        @if (apiUptime(); as uptime) {
+          <li><i class="pi pi-history" aria-hidden="true"></i> Up {{ uptime }}</li>
+        }
+        <li class="status__url"><i class="pi pi-link" aria-hidden="true"></i> {{ healthUrl }}</li>
+      </ul>
+
+      @if (apiComponents().length) {
+        <table class="status__table" aria-label="API components">
+          <thead>
+            <tr><th>Component</th><th>Status</th><th>Detail</th></tr>
+          </thead>
+          <tbody>
+            @for (row of apiComponents(); track row.name) {
+              <tr>
+                <td>{{ row.name }}</td>
+                <td><p-tag [value]="row.status" [severity]="severity(row.status)" /></td>
+                <td class="status__detail">{{ row.detail }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="page__empty">
+          @if (health()?.ok) {
+            The API returned no component detail.
+          } @else {
+            No component detail while the API is unreachable.
+          }
+        </p>
+      }
+    </article>
+  </div>
+
+  <details class="page__card status__raw">
+    <summary>Raw responses ({{ healthUrl }}, {{ infoUrl }})</summary>
+    <pre>{{ raw() | json }}</pre>
+  </details>
+</section>

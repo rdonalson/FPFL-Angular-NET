@@ -1,1 +1,213 @@
-<p>docs works!</p>
+<section class="page docs">
+  <header class="page__header">
+    <div>
+      <a class="page__back" routerLink="/">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Home
+      </a>
+      <h1 class="page__title">FPFL Documentation</h1>
+      <p class="page__subtitle">
+        A full-stack financial planner: an Angular 22 UI, a .NET 10 API and PostgreSQL, deployed to
+        Azure Kubernetes Service through GitHub Actions.
+      </p>
+    </div>
+
+    <div class="page__actions docs__actions">
+      <a class="docs__btn docs__btn--primary" [href]="guideUrl" target="_blank" rel="noopener">
+        <i class="pi pi-file-pdf" aria-hidden="true"></i> User Guide
+      </a>
+      <a class="docs__btn" [href]="swaggerUrl" target="_blank" rel="noopener">
+        <i class="pi pi-code" aria-hidden="true"></i> API docs
+      </a>
+      <a class="docs__btn" [href]="repoUrl" target="_blank" rel="noopener">
+        <i class="pi pi-github" aria-hidden="true"></i> GitHub
+      </a>
+    </div>
+  </header>
+
+  <ul class="docs__meta" role="list">
+    <li><i class="pi pi-desktop" aria-hidden="true"></i> UI build: {{ buildMode }} · Angular {{ angularVersion }}</li>
+    <li><i class="pi pi-link" aria-hidden="true"></i> API: {{ apiUrl }}</li>
+  </ul>
+
+  <div class="page__card docs__card">
+    <p-tabs [value]="tab()" (valueChange)="selectTab($event)" [scrollable]="true">
+      <p-tablist aria-label="Documentation sections">
+        @for (t of tabs; track t.value) {
+          <p-tab [value]="t.value"><i [class]="t.icon" aria-hidden="true"></i> {{ t.label }}</p-tab>
+        }
+      </p-tablist>
+
+      <p-tabpanels>
+        <!-- Overview -->
+        <p-tabpanel value="overview">
+          <h2 class="docs__h">What this system does</h2>
+          <p>
+            You define <strong>credits</strong> and <strong>debits</strong> (a paycheck, the rent, a
+            subscription), each with an amount, optional start and end dates and a recurrence pattern.
+            The API expands them into dated occurrences and adds them to your
+            <strong>initial amount</strong>, producing a day-by-day forecast you can read as a chart, a
+            ledger or an Excel workbook. <strong>Debt Paydown</strong> shows how quickly a debt is paid
+            off when you send part of your income to it.
+          </p>
+
+          <h2 class="docs__h">Where things live</h2>
+          <table class="docs__table">
+            <thead>
+              <tr><th>Location</th><th>Contains</th></tr>
+            </thead>
+            <tbody>
+              @for (link of repoLinks; track link.label) {
+                <tr>
+                  <td>
+                    <a [href]="link.href" target="_blank" rel="noopener">
+                      {{ link.label }} <i class="pi pi-external-link" aria-hidden="true"></i>
+                    </a>
+                  </td>
+                  <td>{{ link.detail }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <h2 class="docs__h">Getting around</h2>
+          <p class="docs__muted">
+            Everything except Home and these docs needs a signed-in session (or Guest Login); item type
+            and time period maintenance and System Status need the admin role.
+          </p>
+          <div class="docs__links">
+            <a class="docs__btn" routerLink="/display"><i class="pi pi-chart-line" aria-hidden="true"></i> Display</a>
+            <a class="docs__btn" routerLink="/initial-amount"><i class="pi pi-wallet" aria-hidden="true"></i> Initial Amount</a>
+            <a class="docs__btn" routerLink="/credits"><i class="pi pi-arrow-down-left" aria-hidden="true"></i> Credits</a>
+            <a class="docs__btn" routerLink="/debits"><i class="pi pi-arrow-up-right" aria-hidden="true"></i> Debits</a>
+            <a class="docs__btn" routerLink="/debt-paydown"><i class="pi pi-credit-card" aria-hidden="true"></i> Debt Paydown</a>
+          </div>
+        </p-tabpanel>
+
+        <!-- Architecture -->
+        <p-tabpanel value="architecture">
+          <h2 class="docs__h">Front end: UI-NG</h2>
+          <p class="docs__muted">
+            <code>core/</code> holds the API envelope, auth, HTTP interceptors, layout and error pages;
+            each page under <code>features/</code> is lazy-loaded.
+          </p>
+          <table class="docs__table">
+            <thead>
+              <tr><th>Area</th><th>Choice</th></tr>
+            </thead>
+            <tbody>
+              @for (row of uiStack; track row.name) {
+                <tr><td>{{ row.name }}</td><td>{{ row.detail }}</td></tr>
+              }
+            </tbody>
+          </table>
+
+          <h2 class="docs__h">Back end: API-NET</h2>
+          <p class="docs__muted">
+            Five projects mirroring the Java API's Maven modules. Only <code>Fpfl.Api</code> runs; it
+            shares the PostgreSQL <code>fpfl</code> schema with API-JDK.
+          </p>
+          <table class="docs__table">
+            <thead>
+              <tr><th>Project</th><th>Responsibility</th></tr>
+            </thead>
+            <tbody>
+              @for (row of apiProjects; track row.name) {
+                <tr><td><code>{{ row.name }}</code></td><td>{{ row.detail }}</td></tr>
+              }
+            </tbody>
+          </table>
+
+          <h2 class="docs__h">Security</h2>
+          <ul>
+            <li>JWT bearer tokens (15 minutes) with single-use refresh tokens, rotated on every refresh</li>
+            <li>Passwords hashed with BCrypt; the guest login happens on the server</li>
+            <li>
+              Roles drive both the API (<code>[Authorize(Roles = …)]</code>) and the UI (admin guard and
+              menu); each user only reaches their own items, forecast and debts
+            </li>
+            <li>One response envelope for every success and error, with a correlation ID for each failure</li>
+          </ul>
+        </p-tabpanel>
+
+        <!-- Ledger engine -->
+        <p-tabpanel value="ledger">
+          <h2 class="docs__h">How a forecast is built</h2>
+          <p>
+            Each item stores only the recurrence fields its time period needs. <code>Fpfl.Display</code>
+            has one expander per pattern that turns those fields into dated occurrences inside the
+            requested range; <code>LedgerBuilder</code> then adds them to the initial amount, one row per
+            day with a running balance. It's pure business logic with unit tests, replacing the original
+            version's stored procedure.
+          </p>
+          <table class="docs__table">
+            <thead>
+              <tr><th>Period</th><th>Name</th><th>Pattern</th></tr>
+            </thead>
+            <tbody>
+              @for (row of expanders; track row.id) {
+                <tr><td>{{ row.id }}</td><td>{{ row.period }}</td><td>{{ row.pattern }}</td></tr>
+              }
+            </tbody>
+          </table>
+
+          <h2 class="docs__h">Debt Paydown</h2>
+          <p>
+            Pick a debit you're paying down, enter what's owed, as of which date, and an optional APR, then
+            send a percentage of any credits to it. <code>PaydownCalculator</code> reuses the expanders:
+            the debit's own payment and each allocated share reduce the balance, interest (APR ÷ 12) is
+            added at each month end, and it looks up to 30 years ahead for the payoff date. Allocations
+            also appear in the main forecast as "Debt Paydown" debits, and no credit can be allocated more
+            than 100% across all debts.
+          </p>
+        </p-tabpanel>
+
+        <!-- Data model -->
+        <p-tabpanel value="data">
+          <h2 class="docs__h">Entities</h2>
+          <p class="docs__muted">
+            PostgreSQL schema <code>fpfl</code>, shared with the Java API. EF Core maps onto the existing
+            tables; the two Debt Paydown tables come from a SQL script.
+          </p>
+          <table class="docs__table">
+            <thead>
+              <tr><th>Entity</th><th>Group</th><th>Purpose</th></tr>
+            </thead>
+            <tbody>
+              @for (row of entities; track row.name) {
+                <tr>
+                  <td><code>{{ row.name }}</code></td>
+                  <td><span class="docs__chip" [class.docs__chip--auth]="row.group === 'Auth'">{{ row.group }}</span></td>
+                  <td>{{ row.detail }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </p-tabpanel>
+
+        <!-- CI/CD -->
+        <p-tabpanel value="cicd">
+          <h2 class="docs__h">GitHub Actions to Azure Kubernetes Service</h2>
+          <p class="docs__muted">
+            Each app has its own workflow, so a change to one never rebuilds the other.
+          </p>
+          <table class="docs__table">
+            <thead>
+              <tr><th>Step</th><th>What happens</th></tr>
+            </thead>
+            <tbody>
+              @for (row of pipeline; track row.name) {
+                <tr><td class="docs__nowrap">{{ row.name }}</td><td>{{ row.detail }}</td></tr>
+              }
+            </tbody>
+          </table>
+          <p class="docs__muted">
+            Both apps run in the <code>fpfl</code> namespace on their own node pool, behind nginx ingress
+            with Let's Encrypt certificates. Secrets (the connection string and JWT signing key) come
+            from a Kubernetes secret, never from the repository.
+          </p>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </div>
+</section>

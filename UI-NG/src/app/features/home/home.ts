@@ -60,6 +60,7 @@ const USER_ACTIONS: readonly QuickAction[] = [
 const ADMIN_ACTIONS: readonly Pick<QuickAction, 'label' | 'icon' | 'to'>[] = [
   { label: 'Manage Item Types', icon: 'pi pi-tags', to: '/item-types' },
   { label: 'Manage Time Periods', icon: 'pi pi-calendar', to: '/time-periods' },
+  { label: 'System Status', icon: 'pi pi-server', to: '/status' },
 ];
 
 /**

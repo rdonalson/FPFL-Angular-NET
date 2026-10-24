@@ -30,6 +30,11 @@ describe('Home', () => {
     );
   });
 
+  it('links the docs page', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector<HTMLAnchorElement>('.hero__docs')?.getAttribute('href')).toBe('/docs');
+  });
+
   it('offers guest login when signed out', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('Try it as a guest');
   });

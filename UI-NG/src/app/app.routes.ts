@@ -1,5 +1,6 @@
 import { Route, Routes } from '@angular/router';
 
+import { adminGuard } from './core/auth/admin-guard';
 import { authGuard } from './core/auth/auth-guard';
 import { ITEM_TYPE } from './features/item-detail/item';
 
@@ -46,6 +47,17 @@ export const routes: Routes = [
     title: 'Time Periods | FPFL',
     canActivate: [authGuard],
     loadComponent: () => import('./features/time-periods/time-periods').then((m) => m.TimePeriods),
+  },
+  {
+    path: 'docs',
+    title: 'Docs | FPFL',
+    loadComponent: () => import('./features/docs/docs').then((m) => m.Docs),
+  },
+  {
+    path: 'status',
+    title: 'System Status | FPFL',
+    canActivate: [adminGuard],
+    loadComponent: () => import('./features/admin/status/status').then((m) => m.Status),
   },
   {
     path: '**',

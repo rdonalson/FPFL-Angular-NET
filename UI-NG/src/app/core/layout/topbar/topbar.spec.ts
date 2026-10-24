@@ -37,6 +37,11 @@ describe('Topbar', () => {
     expect(link?.href).toContain('github.com/rdonalson/FPFL-Angular-NET');
   });
 
+  it('links the docs page', () => {
+    const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.topbar__docs');
+    expect(link?.getAttribute('href')).toBe('/docs');
+  });
+
   it('shows Guest Login, Login and Register when signed out', () => {
     expect(text()).toContain('Guest Login');
     expect(text()).toContain('Login');
