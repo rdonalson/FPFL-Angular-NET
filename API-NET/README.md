@@ -179,7 +179,8 @@ Errors carry `"data": null` and a `correlationId` that matches the server log en
 | `POST /users/{userId}/roles/{roleId}` · `DELETE …/{roleId}` | **Admin** | Add / remove one role |
 | `PUT /users/{userId}/roles` | **Admin** | Replace all roles (`{ "roleIds": [...] }`) |
 | `POST /client-logs` | Public, rate‑limited | Write a UI log entry to the server log |
-| `GET /health` | Public | Health with database check (Actuator‑style JSON) |
+| `GET /health` | Public | Health in Actuator shape: `db` (PostgreSQL reachable), `diskSpace` (free space above 10 MB) and `ping`; 503 when any is DOWN |
+| `GET /info` | Public | Actuator‑style info: `app` (name, version), `build` (version, commit, build time) and `runtime` (.NET version, OS, environment, uptime) |
 
 `PUT /item-types/{id}` and `PUT /time-periods/{id}` accept an optional `id` in the body: omit it to rename (as API‑JDK does), or send a different value to change the id.
 
@@ -438,7 +439,7 @@ The goal is the same feature set as [API‑JDK](https://github.com/rdonalson/FPF
 | Client logs | ✅ Done |
 | Item types — CRUD with id changes | ✅ Done |
 | Time periods — CRUD with id changes | ✅ Done |
-| Health checks, Swagger UI, landing page | ✅ Done |
+| Health checks (`db`, `diskSpace`, `ping`), `/info`, Swagger UI, landing page | ✅ Done |
 | Docker image, AKS deployment, CI/CD with tests | ✅ Done |
 | Items (credits / debits with recurrence) | ✅ Done |
 | Initial amount (auto‑created at registration and first read) | ✅ Done |

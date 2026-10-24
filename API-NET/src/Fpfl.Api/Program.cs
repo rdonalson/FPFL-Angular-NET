@@ -15,6 +15,7 @@ using Fpfl.Items.Infrastructure.Health;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,8 +84,11 @@ builder.Services.AddOpenApi(options => options.AddDocumentTransformer((document,
     return Task.CompletedTask;
 }));
 
+// /health lists the same components as API-JDK's actuator: db, diskSpace and ping.
 builder.Services.AddHealthChecks()
-    .AddCheck<ItemsDatabaseHealthCheck>("db");
+    .AddCheck<ItemsDatabaseHealthCheck>("db")
+    .AddCheck("diskSpace", new DiskSpaceHealthCheck())
+    .AddCheck("ping", () => HealthCheckResult.Healthy("API is answering"));
 
 // Anonymous write endpoints (POST /client-logs) are limited per client IP; 429 uses the envelope.
 builder.Services.AddRateLimiter(options =>
@@ -108,6 +112,7 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
 // Pipeline
 // ---------------------------------------------------------------------------
 var app = builder.Build();
+var startedAt = DateTimeOffset.UtcNow;
 
 app.UseExceptionHandler();
 
@@ -138,6 +143,12 @@ app.UseSwaggerUI(options =>
 });
 
 app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = HealthResponseWriter.WriteAsync });
+
+// Version, build and runtime (Actuator-style /info), read by the UI's status page.
+app.MapGet("/info", (IHostEnvironment env, TimeProvider clock) =>
+        AppInfo.Create(typeof(Program).Assembly, env.EnvironmentName, startedAt, clock.GetUtcNow()))
+    .AllowAnonymous()
+    .WithTags("Health");
 
 app.MapControllers();
 

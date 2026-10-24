@@ -7,7 +7,7 @@ It replaces the original version's NgModule/NgRx front end, keeping the same pro
 
 Live at <https://ui-ng.ledger-finance.com> · API at <https://api-net.ledger-finance.com>
 
-> 🚧 **Nearly at parity, and past it.** Everything in UI-TSX is here — credits and debits, the initial amount, and the forecast with its chart and ledger — plus two things UI-TSX doesn't have: **Export to Excel** and **Debt Paydown**. Only the admin status page remains. See [Project Status](#-project-status).
+> 🚧 **Nearly at parity, and past it.** Everything in UI-TSX is here — credits and debits, the initial amount, and the forecast with its chart and ledger — plus two things UI-TSX doesn't have: **Export to Excel** and **Debt Paydown**. The **Docs** page and the admin **System Status** page now match UI-TSX's too. See [Project Status](#-project-status).
 
 ---
 
@@ -57,8 +57,8 @@ UI-NG/
  │    │    │    ├── item-detail/ # credits & debits (list, period picker, edit) + initial amount
  │    │    │    ├── debt-paydown/# tracked debts and the credits allocated to them
  │    │    │    ├── display/     # forecast: date range, summary, chart, ledger, paydown tabs, Excel export
- │    │    │    ├── admin/       # status page (scaffolded)
- │    │    │    └── docs/        # docs page (scaffolded)
+ │    │    │    ├── admin/       # System Status page (admin): UI checks + API /health and /info
+ │    │    │    └── docs/        # Docs page: overview, architecture, ledger engine, data model, CI/CD
  │    │    ├── app.config.ts     # Providers (replaces AppModule)
  │    │    ├── app.routes.ts     # Top-level routes
  │    │    └── app.ts / .html    # Application shell
@@ -138,9 +138,11 @@ Features read data with **`httpResource`** inside a small `data-access` service 
 | `/credits/:id/edit` · `/debits/:id/edit` | Authenticated | Edit an item |
 | `/debt-paydown` | Authenticated | Debt Paydown — track debts, set balances / APR, allocate credits |
 | `/display` | Authenticated | The forecast — summary, chart, ledger, paydown chart / ledger, Excel export |
+| `/docs` | Public | Documentation — overview, architecture, ledger engine, data model, CI/CD; links to the user guide, Swagger and GitHub |
+| `/status` | **Admin** | System Status — UI checks, the API's `/health` components and `/info`, 30‑second auto refresh, raw responses |
 | `**` | Public | Not found |
 
-Every route is lazy‑loaded with `loadComponent`, and route `data` / params reach components as inputs (`withComponentInputBinding`) — the credit and debit pages are one set of components told which item type they show. The admin status page is scaffolded under `features/admin` and will be routed next.
+Every route is lazy‑loaded with `loadComponent`, and route `data` / params reach components as inputs (`withComponentInputBinding`) — the credit and debit pages are one set of components told which item type they show.
 
 ---
 
@@ -166,6 +168,8 @@ Implemented today:
   - **Cards** per tracked debt: its payment and schedule, what's owed (as of a date, with APR), and each allocation ("70% of Paycheck · $1,400.00 each")
   - **Editor** — choose an untracked debit, enter balance / as‑of date / APR, add allocations; each row shows the dollars per occurrence live and how much of that credit other debts already take
   - The same rules as the API's `DebtRules` run before saving, so "Paycheck is already 70% allocated…" shows without a round trip
+- **`docs`** — the documentation page (UI-TSX's DocsPage): what the system does, where things live, the UI and API stacks, how a forecast and a paydown are computed, the data model and the pipeline, in tabs; linked from the home page, the top bar and the menu
+- **`admin/status`** — System Status for admins (UI-TSX's StatusPage): the UI's own checks (rendering, connection, session, router, API URL, build, uptime) and the API's `/health` components (`db`, `diskSpace`, `ping`) with latency, plus version, commit, build time, runtime and uptime from `/info`. Probes use `fetch` with a 5‑second timeout and say *why* a check failed (unreachable, timed out, or answered but blocked by CORS). Auto refresh every 30 seconds can be paused; the raw responses are one click away
 - **`display`** — the forecast:
   - **Date range** with quick ranges (30 days → 5 years); runs on arrival with today + 90 days
   - **Summary tiles** — starting, credits, debits, lowest (with date) and ending balance, plus a warning when the balance drops below $0
@@ -195,7 +199,8 @@ The goal is the same feature set as [UI-TSX](https://github.com/rdonalson/FPFL-R
 | Forecasted ledger table + chart with date‑range selection | ✅ Done |
 | Ledger download to Excel with expandable rows | ✅ Done (not in UI-TSX) |
 | Debt Paydown — setup page, paydown chart / ledger tabs, Excel sheet | ✅ Done (not in UI-TSX) |
-| Admin status page (UI + API health) | 🔜 Planned |
+| Docs page | ✅ Done |
+| Admin status page (UI + API health) | ✅ Done |
 | Client error forwarding to `/client-logs` | 🔜 Planned |
 
 ---

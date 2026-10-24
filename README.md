@@ -13,7 +13,7 @@ The project is organized into two top‑level applications plus shared infrastru
 
 This repository serves as the **parent project**, containing both applications, the deployment manifests, and their shared development workflow.
 
-> 🚧 **Nearly at parity, and past it.** Auth, credits and debits with every recurrence pattern, the initial amount, the forecasted ledger with its chart and **Excel export**, item types, time periods, and the full deployment pipeline are live. **Debt Paydown**, a feature neither earlier version had, tracks how credit card and other debts get paid down. Only the admin status page remains to match FPFL-React-Java. See [Project Status](#-project-status).
+> 🚧 **Nearly at parity, and past it.** Auth, credits and debits with every recurrence pattern, the initial amount, the forecasted ledger with its chart and **Excel export**, item types, time periods, and the full deployment pipeline are live. **Debt Paydown**, a feature neither earlier version had, tracks how credit card and other debts get paid down. A **Docs** page and an admin **System Status** page (UI checks plus the API's `/health` components and `/info`) match FPFL-React-Java's. See [Project Status](#-project-status).
 
 ### 🌐 Live Environment
 
@@ -84,7 +84,7 @@ The FPFL system is designed as a **modular, maintainable, enterprise‑grade ful
 
 - Connects to **PostgreSQL** (schema `fpfl`) — the **same database** as API‑JDK
 - OpenAPI document served by `Microsoft.AspNetCore.OpenApi`, browsable in **Swagger UI**
-- Health exposed at `/health` (Actuator‑style JSON) and wired into Kubernetes probes
+- Health at `/health` with the same components as API‑JDK's Actuator (`db`, `diskSpace`, `ping`), and version / build / runtime at `/info`; `/health` is wired into the Kubernetes readiness probe
 
 For full backend details, see the API README:
 👉 [API-NET/README.md](./API-NET/README.md)
@@ -189,7 +189,8 @@ Ultimately this version will match every feature of [FPFL-React-Java](https://gi
 | Forecasted ledger + chart | ✅ | ✅ |
 | Ledger download to Excel (expandable rows) | ✅ | — |
 | **Debt Paydown** — tracked debts, allocations, paydown chart / ledger / Excel sheet *(new)* | ✅ | ✅ |
-| Admin status page | 🔜 | ✅ (`/health`) |
+| Docs page | ✅ | — |
+| Admin System Status page — UI checks, API health components, version, 30 s auto refresh | ✅ | ✅ (`/health`, `/info`) |
 | Docker, AKS, GitHub Actions CI/CD | ✅ | ✅ |
 
 ---
@@ -250,6 +251,7 @@ A guided tour of the codebase. All links are relative to the repository root.
 ### Features
 
 - [Home](UI-NG/src/app/features/home/home.ts) — PrimeNG Galleria landing page
+- **Docs & status** — [Docs](UI-NG/src/app/features/docs/docs.ts) · [Status](UI-NG/src/app/features/admin/status/status.ts) · [status-api.ts](UI-NG/src/app/features/admin/status/status-api.ts) (fetch‑based probes that tell CORS blocking apart from an API that's down)
 - [ItemTypes](UI-NG/src/app/features/item-types/item-types.ts) · [item-types-api.ts](UI-NG/src/app/features/item-types/data-access/item-types-api.ts)
 - [TimePeriods](UI-NG/src/app/features/time-periods/time-periods.ts) · [time-periods-api.ts](UI-NG/src/app/features/time-periods/data-access/time-periods-api.ts)
 - **Credits & debits** — [ItemList](UI-NG/src/app/features/item-detail/item-list/item-list.ts) · [PeriodPicker](UI-NG/src/app/features/item-detail/period-picker/period-picker.ts) · [ItemEdit](UI-NG/src/app/features/item-detail/item-edit/item-edit.ts) · [item-form.ts](UI-NG/src/app/features/item-detail/item-form.ts) · [schedule.ts](UI-NG/src/app/features/item-detail/schedule.ts) · [item-api.ts](UI-NG/src/app/features/item-detail/data-access/item-api.ts)
@@ -303,7 +305,7 @@ A guided tour of the codebase. All links are relative to the repository root.
 - [ApiResponse](API-NET/src/Fpfl.Api/Responses/ApiResponse.cs) · [ApiResponseFactory](API-NET/src/Fpfl.Api/Responses/ApiResponseFactory.cs)
 - [GlobalExceptionHandler](API-NET/src/Fpfl.Api/Exceptions/GlobalExceptionHandler.cs)
 - [AuthEnvelopeEvents](API-NET/src/Fpfl.Api/Security/AuthEnvelopeEvents.cs)
-- [HealthResponseWriter](API-NET/src/Fpfl.Api/Health/HealthResponseWriter.cs)
+- [HealthResponseWriter](API-NET/src/Fpfl.Api/Health/HealthResponseWriter.cs) · [DiskSpaceHealthCheck](API-NET/src/Fpfl.Api/Health/DiskSpaceHealthCheck.cs) · [AppInfo](API-NET/src/Fpfl.Api/Health/AppInfo.cs) (`/info`)
 
 ### Fpfl.Items
 
@@ -334,7 +336,7 @@ A guided tour of the codebase. All links are relative to the repository root.
 
 - [PaydownCalculatorTests](API-NET/tests/Fpfl.Api.Tests/PaydownCalculatorTests.cs) · [DebtServiceTests](API-NET/tests/Fpfl.Api.Tests/DebtServiceTests.cs) · [InMemoryRepositories](API-NET/tests/Fpfl.Api.Tests/InMemoryRepositories.cs)
 - [RecurrenceEngineTests](API-NET/tests/Fpfl.Api.Tests/RecurrenceEngineTests.cs) · [LedgerBuilderTests](API-NET/tests/Fpfl.Api.Tests/LedgerBuilderTests.cs) · [DisplayMapperTests](API-NET/tests/Fpfl.Api.Tests/DisplayMapperTests.cs) · [ItemRulesTests](API-NET/tests/Fpfl.Api.Tests/ItemRulesTests.cs) · [ItemServiceTests](API-NET/tests/Fpfl.Api.Tests/ItemServiceTests.cs) · [InitialAmountServiceTests](API-NET/tests/Fpfl.Api.Tests/InitialAmountServiceTests.cs)
-- [AuthServiceTests](API-NET/tests/Fpfl.Api.Tests/AuthServiceTests.cs) · [UserRolesServiceTests](API-NET/tests/Fpfl.Api.Tests/UserRolesServiceTests.cs) · [ItemTypeServiceTests](API-NET/tests/Fpfl.Api.Tests/ItemTypeServiceTests.cs) · [TimePeriodServiceTests](API-NET/tests/Fpfl.Api.Tests/TimePeriodServiceTests.cs) · [SanitizerTests](API-NET/tests/Fpfl.Api.Tests/SanitizerTests.cs)
+- [AuthServiceTests](API-NET/tests/Fpfl.Api.Tests/AuthServiceTests.cs) · [UserRolesServiceTests](API-NET/tests/Fpfl.Api.Tests/UserRolesServiceTests.cs) · [ItemTypeServiceTests](API-NET/tests/Fpfl.Api.Tests/ItemTypeServiceTests.cs) · [TimePeriodServiceTests](API-NET/tests/Fpfl.Api.Tests/TimePeriodServiceTests.cs) · [SanitizerTests](API-NET/tests/Fpfl.Api.Tests/SanitizerTests.cs) · [HealthTests](API-NET/tests/Fpfl.Api.Tests/HealthTests.cs)
 
 ---
 

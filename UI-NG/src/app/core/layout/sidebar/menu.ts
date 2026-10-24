@@ -27,6 +27,7 @@ export const MENU: readonly MenuSection[] = [
       { label: 'Debits', icon: 'pi pi-arrow-up-right', to: '/debits' },
       { label: 'Debt Paydown', icon: 'pi pi-credit-card', to: '/debt-paydown' },
       { label: 'Display', icon: 'pi pi-chart-line', to: '/display' },
+      { label: 'Docs', icon: 'pi pi-book', to: '/docs' },
     ],
   },
   {
@@ -35,6 +36,7 @@ export const MENU: readonly MenuSection[] = [
     items: [
       { label: 'Item Types', icon: 'pi pi-tags', to: '/item-types' },
       { label: 'Time Periods', icon: 'pi pi-calendar', to: '/time-periods' },
+      { label: 'System Status', icon: 'pi pi-server', to: '/status' },
     ],
   },
 ];
